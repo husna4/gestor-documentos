@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos/layout :: head('Entrar')}"></head>
+<body class="bg-body-tertiary">
+<main class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-sm-8 col-md-6 col-lg-4">
+            <h1 class="h3 text-center mb-4"><i class="bi bi-folder2-open text-primary"></i> Documentos de casa</h1>
+
+            <div th:if="${param.error}" class="alert alert-danger">Usuario o contraseña incorrectos.</div>
+            <div th:if="${param.salir}" class="alert alert-info">Has cerrado la sesión.</div>
+            <div th:if="${param.desactivado}" class="alert alert-warning">
+                Tu usuario está desactivado. Habla con quien administra la aplicación.
+            </div>
+
+            <!-- th:action añade automáticamente el campo oculto con el token CSRF -->
+            <form th:action="@{/login}" method="post" class="card card-body shadow-sm">
+                <div class="mb-3">
+                    <label for="username" class="form-label">Usuario</label>
+                    <input type="text" id="username" name="username" class="form-control form-control-lg"
+                           autocomplete="username" autocapitalize="none" required autofocus>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Contraseña</label>
+                    <input type="password" id="password" name="password" class="form-control form-control-lg"
+                           autocomplete="current-password" required>
+                </div>
+                <div class="form-check mb-3">
+                    <input type="checkbox" id="recordarme" name="recordarme" class="form-check-input">
+                    <label for="recordarme" class="form-check-label">Recordarme en este dispositivo</label>
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg w-100">Entrar</button>
+            </form>
+        </div>
+    </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos/layout :: head('Subir documentos')}"></head>
+<body>
+<nav th:replace="~{fragmentos/layout :: navbar}"></nav>
+<main class="container pb-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <h1 class="h3 mb-3">Subir documentos</h1>
+
+            <div th:if="${subidos != null and !#lists.isEmpty(subidos)}" class="alert alert-success">
+                <strong th:text="${#lists.size(subidos) == 1 ? 'Subido 1 documento:' : 'Subidos ' + #lists.size(subidos) + ' documentos:'}">Subidos:</strong>
+                <ul class="mb-0"><li th:each="n : ${subidos}" th:text="${n}">nombre</li></ul>
+            </div>
+            <div th:if="${rechazados != null and !#lists.isEmpty(rechazados)}" class="alert alert-danger">
+                <strong>No se han subido:</strong>
+                <ul class="mb-0"><li th:each="e : ${rechazados}" th:text="${e}">error</li></ul>
+            </div>
+
+            <form th:action="@{/documentos/subir}" th:object="${form}" method="post"
+                  enctype="multipart/form-data" class="card card-body shadow-sm"
+                  th:attr="data-tamano-maximo=${tamanoMaximoBytes}">
+                <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger">
+                    <p th:each="error : ${#fields.globalErrors()}" th:text="${error}" class="mb-0">Error</p>
+                </div>
+
+                <div class="mb-3">
+                    <span class="form-label d-block">Ficheros</span>
+                    <div class="d-flex flex-wrap gap-2">
+                        <!-- En el móvil, "capture" abre directamente la cámara trasera. -->
+                        <label class="btn btn-lg btn-outline-primary">
+                            <i class="bi bi-camera"></i> Hacer foto
+                            <input type="file" name="ficheros" accept="image/*" capture="environment"
+                                   class="d-none" data-selector-ficheros>
+                        </label>
+                        <label class="btn btn-lg btn-outline-primary">
+                            <i class="bi bi-folder2-open"></i> Elegir ficheros
+                            <input type="file" name="ficheros" multiple th:accept="${tiposAceptados}"
+                                   class="d-none" data-selector-ficheros>
+                        </label>
+                    </div>
+                    <ul id="elegidos" class="list-unstyled small mt-2 mb-0 text-body-secondary"></ul>
+                    <div id="demasiado-grandes" class="alert alert-danger small mt-2 mb-0 d-none"></div>
+                    <div class="form-text">Imágenes, PDF y documentos de Office/LibreOffice.
+                        Máximo <span th:text="${tamanoMaximo}">20 MB</span> por fichero.</div>
+                </div>
+
+                <th:block th:replace="~{fragmentos/documentos :: campos-clasificacion}"></th:block>
+
+                <div class="mb-3">
+                    <label for="descripcion" class="form-label">Descripción <span class="text-body-secondary">(opcional)</span></label>
+                    <textarea th:field="*{descripcion}" class="form-control" rows="2" th:errorclass="is-invalid"></textarea>
+                    <div class="invalid-feedback" th:errors="*{descripcion}">Error</div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg w-100" id="boton-subir" disabled>
+                    <i class="bi bi-cloud-upload"></i> Subir
+                </button>
+            </form>
+        </div>
+    </div>
+</main>
+<th:block th:replace="~{fragmentos/layout :: scripts}"></th:block>
+<script>
+    // Muestra los ficheros elegidos (de la cámara y del selector) y activa el botón cuando hay alguno.
+    // Si alguno supera el tamaño máximo avisa antes de enviar: el servidor rechazaría la subida entera.
+    (function () {
+        const selectores = document.querySelectorAll('[data-selector-ficheros]');
+        const lista = document.getElementById('elegidos');
+        const aviso = document.getElementById('demasiado-grandes');
+        const boton = document.getElementById('boton-subir');
+        const maximo = Number(boton.closest('form').dataset.tamanoMaximo);
+        function actualizar() {
+            lista.replaceChildren();
+            const grandes = [];
+            let total = 0;
+            selectores.forEach(s => Array.from(s.files).forEach(f => {
+                const li = document.createElement('li');
+                li.textContent = '📄 ' + f.name + ' (' + Math.max(1, Math.round(f.size / 1024)) + ' KB)';
+                lista.appendChild(li);
+                total++;
+                if (f.size > maximo) {
+                    grandes.push(f.name);
+                }
+            }));
+            aviso.textContent = grandes.length
+                ? 'Demasiado grande (máximo ' + Math.round(maximo / 1048576) + ' MB): ' + grandes.join(', ')
+                  + '. Quítalo o redúcelo antes de subir.'
+                : '';
+            aviso.classList.toggle('d-none', grandes.length === 0);
+            boton.disabled = total === 0 || grandes.length > 0;
+            boton.lastChild.textContent = total > 1 ? ' Subir ' + total + ' ficheros' : ' Subir';
+        }
+        selectores.forEach(s => s.addEventListener('change', actualizar));
+        boton.closest('form').addEventListener('submit', () => {
+            boton.disabled = true;
+            boton.lastChild.textContent = ' Subiendo…';
+        });
+    })();
+</script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos/layout :: head('Editar usuario')}"></head>
+<body>
+<nav th:replace="~{fragmentos/layout :: navbar}"></nav>
+<main class="container pb-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <th:block th:replace="~{fragmentos/layout :: mensajes}"></th:block>
+            <h1 class="h3 mb-3">Usuario <span th:text="${usuario.username}">usuario</span></h1>
+
+            <form th:action="@{/admin/usuarios/{id}/editar(id=${usuario.id})}" th:object="${form}" method="post"
+                  class="card card-body shadow-sm mb-4">
+                <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger">
+                    <p th:each="error : ${#fields.globalErrors()}" th:text="${error}" class="mb-0">Error</p>
+                </div>
+                <div class="mb-3">
+                    <label for="rol" class="form-label">Rol</label>
+                    <select th:field="*{rol}" class="form-select">
+                        <option value="USER">Usuario: solo ver y descargar</option>
+                        <option value="ADMIN">Administrador: además subir, editar, borrar y gestionar</option>
+                    </select>
+                </div>
+                <div class="form-check form-switch mb-3">
+                    <input type="checkbox" th:field="*{activo}" class="form-check-input" role="switch">
+                    <label for="activo1" class="form-check-label">Activo (puede entrar en la aplicación)</label>
+                </div>
+                <div class="mb-3">
+                    <label for="personaId" class="form-label">Persona de la familia</label>
+                    <select th:field="*{personaId}" class="form-select">
+                        <option value="">— Ninguna —</option>
+                        <option th:each="p : ${personas}" th:value="${p.id}" th:text="${p.nombreCompleto()}">Persona</option>
+                    </select>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                    <a th:href="@{/admin/usuarios}" class="btn btn-outline-secondary">Volver</a>
+                </div>
+            </form>
+
+            <h2 class="h5">Poner una contraseña temporal</h2>
+            <form th:action="@{/admin/usuarios/{id}/password(id=${usuario.id})}" method="post" class="card card-body shadow-sm">
+                <p class="small text-body-secondary">Si se le ha olvidado la contraseña. Tendrá que cambiarla al entrar.</p>
+                <div class="input-group">
+                    <input type="text" name="temporal" class="form-control" minlength="8" required
+                           autocomplete="off" aria-label="Contraseña temporal" placeholder="Mínimo 8 caracteres">
+                    <button type="submit" class="btn btn-outline-primary">Poner contraseña</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+<th:block th:replace="~{fragmentos/layout :: scripts}"></th:block>
+</body>
+</html>

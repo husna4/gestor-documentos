@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos/layout :: head('Usuarios')}"></head>
+<body>
+<nav th:replace="~{fragmentos/layout :: navbar}"></nav>
+<main class="container pb-5">
+    <th:block th:replace="~{fragmentos/layout :: mensajes}"></th:block>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h3 mb-0">Usuarios</h1>
+        <a th:href="@{/admin/usuarios/nuevo}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Nuevo usuario</a>
+    </div>
+    <div class="list-group shadow-sm">
+        <div th:each="u : ${usuarios}" class="list-group-item d-flex flex-wrap gap-2 align-items-center">
+            <div class="flex-grow-1">
+                <span class="fw-semibold" th:text="${u.username}">usuario</span>
+                <span th:if="${u.id == idActual}" class="badge text-bg-secondary">tú</span>
+                <span class="badge" th:classappend="${u.rol.name() == 'ADMIN'} ? 'text-bg-primary' : 'text-bg-light border'"
+                      th:text="${u.rol.name() == 'ADMIN'} ? 'Administrador' : 'Usuario'">Rol</span>
+                <span th:unless="${u.activo}" class="badge text-bg-danger">Desactivado</span>
+                <span th:if="${u.debeCambiarPassword}" class="badge text-bg-warning">Debe cambiar contraseña</span>
+                <div th:if="${u.personaId != null and personas[u.personaId] != null}" class="small text-body-secondary">
+                    <i class="bi bi-person"></i> <span th:text="${personas[u.personaId].nombreCompleto()}">Persona</span>
+                </div>
+            </div>
+            <a th:href="@{/admin/usuarios/{id}/editar(id=${u.id})}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-pencil"></i> Editar</a>
+            <form th:unless="${u.id == idActual}" th:action="@{/admin/usuarios/{id}/borrar(id=${u.id})}" method="post"
+                  th:attr="onsubmit=|return confirm('¿Borrar el usuario ${u.username}? Sus documentos subidos no se borran.');|">
+                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Borrar</button>
+            </form>
+        </div>
+    </div>
+</main>
+<th:block th:replace="~{fragmentos/layout :: scripts}"></th:block>
+</body>
+</html>

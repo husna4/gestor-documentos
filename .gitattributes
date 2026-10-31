@@ -1,0 +1,12 @@
+/mvnw text eol=lf
+*.cmd text eol=crlf
+
+# Ficheros binarios: Git no debe tocar sus saltos de línea
+*.pdf binary
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.gif binary
+*.webp binary
+*.zip binary
+*.jar binary

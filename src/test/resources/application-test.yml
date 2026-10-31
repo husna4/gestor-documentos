@@ -1,0 +1,17 @@
+# Perfil "test": se activa con @TestIntegracion. Usa una BD aparte para no tocar los datos reales.
+spring:
+  datasource:
+    url: ${DB_TEST_URL:jdbc:postgresql://localhost:5432/gestordocs_test}
+
+# Valores solo para tests (no son secretos reales).
+app:
+  admin:
+    username: admin
+    password: admin-de-pruebas
+  recordarme:
+    clave: clave-de-pruebas-recordarme
+  storage:
+    path: target/ficheros-test
+  documentos:
+    # Pequeño a propósito, para probar el límite sin crear ficheros enormes.
+    tamano-maximo: 100KB

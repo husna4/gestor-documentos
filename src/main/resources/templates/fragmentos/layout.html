@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<!--
+  Fragmentos comunes a todas las páginas. Uso en cada página:
+    <head th:replace="~{fragmentos/layout :: head('Título')}"></head>
+    <nav th:replace="~{fragmentos/layout :: navbar}"></nav>
+    <th:block th:replace="~{fragmentos/layout :: mensajes}"></th:block>
+    <th:block th:replace="~{fragmentos/layout :: scripts}"></th:block>
+-->
+
+<head th:fragment="head(titulo)">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${titulo} + ' · Documentos de casa'">Documentos de casa</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+
+<body>
+
+<nav th:fragment="navbar" class="navbar navbar-expand-lg bg-primary mb-4" data-bs-theme="dark">
+    <div class="container">
+        <a class="navbar-brand fw-semibold" th:href="@{/}">
+            <i class="bi bi-folder2-open"></i> Documentos de casa
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu"
+                aria-controls="menu" aria-expanded="false" aria-label="Abrir menú">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="menu" sec:authorize="isAuthenticated()">
+            <form class="d-flex my-2 my-lg-0 ms-lg-3 flex-grow-1 buscador-navbar" role="search"
+                  th:action="@{/buscar}" method="get">
+                <input class="form-control" type="search" name="q" placeholder="Buscar documentos…"
+                       aria-label="Buscar documentos">
+            </form>
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+                    <a class="nav-link" th:href="@{/documentos/subir}"><i class="bi bi-cloud-upload"></i> Subir</a>
+                </li>
+                <li class="nav-item dropdown" sec:authorize="hasRole('ADMIN')">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                       aria-expanded="false"><i class="bi bi-gear"></i> Administrar</a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" th:href="@{/admin/personas}"><i class="bi bi-people"></i> Personas</a></li>
+                        <li><a class="dropdown-item" th:href="@{/admin/secciones}"><i class="bi bi-collection"></i> Secciones</a></li>
+                        <li><a class="dropdown-item" th:href="@{/admin/usuarios}"><i class="bi bi-person-badge"></i> Usuarios</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                       aria-expanded="false">
+                        <i class="bi bi-person-circle"></i> <span sec:authentication="name">usuario</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" th:href="@{/cuenta/password}">
+                            <i class="bi bi-key"></i> Cambiar contraseña</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <!-- El logout es un POST con token CSRF: así otra web no puede cerrarte la sesión -->
+                            <form th:action="@{/logout}" method="post">
+                                <button type="submit" class="dropdown-item">
+                                    <i class="bi bi-box-arrow-right"></i> Salir
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<th:block th:fragment="mensajes">
+    <div th:if="${mensaje}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <span th:text="${mensaje}">Mensaje</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span th:text="${error}">Error</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+</th:block>
+
+<th:block th:fragment="scripts">
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+    <script th:src="@{/webjars/htmx.org/dist/htmx.min.js}"></script>
+</th:block>
+
+</body>
+</html>

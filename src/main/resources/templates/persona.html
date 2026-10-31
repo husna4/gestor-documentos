@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragmentos/layout :: head(${persona.nombreCompleto()})}"></head>
+<body>
+<nav th:replace="~{fragmentos/layout :: navbar}"></nav>
+<main class="container pb-5">
+    <nav aria-label="Ruta"><ol class="breadcrumb">
+        <li class="breadcrumb-item"><a th:href="@{/}">Inicio</a></li>
+        <li class="breadcrumb-item active" aria-current="page" th:text="${persona.nombreCompleto()}">Persona</li>
+    </ol></nav>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+        <div>
+            <h1 class="h3 mb-1"><i class="bi bi-person-circle text-primary"></i>
+                <span th:text="${persona.nombreCompleto()}">Persona</span></h1>
+            <p th:if="${persona.notas}" th:text="${persona.notas}" class="text-body-secondary mb-1">Notas</p>
+            <span class="text-body-secondary" th:text="${total == 1 ? '1 documento' : total + ' documentos'}">0</span>
+        </div>
+        <div class="d-flex gap-2">
+            <a th:if="${total > 0}" th:href="@{/zip/persona/{id}(id=${persona.id})}" class="btn btn-outline-primary">
+                <i class="bi bi-file-earmark-zip"></i> Descargar todo (ZIP)</a>
+            <a sec:authorize="hasRole('ADMIN')" th:href="@{/documentos/subir(persona=${persona.id})}" class="btn btn-primary">
+                <i class="bi bi-cloud-upload"></i> Subir</a>
+        </div>
+    </div>
+
+    <p th:if="${total == 0}" class="text-body-secondary fst-italic">Esta persona aún no tiene documentos.</p>
+    <section th:each="grupo : ${grupos}" class="mb-4">
+        <h2 class="h5 border-bottom pb-1" th:text="${grupo.key}">Sección</h2>
+        <div th:replace="~{fragmentos/documentos :: lista(${grupo.value})}"></div>
+    </section>
+</main>
+<th:block th:replace="~{fragmentos/layout :: scripts}"></th:block>
+</body>
+</html>

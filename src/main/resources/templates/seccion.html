@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragmentos/layout :: head(${seccion.nombre})}"></head>
+<body>
+<nav th:replace="~{fragmentos/layout :: navbar}"></nav>
+<main class="container pb-5">
+    <th:block th:replace="~{fragmentos/layout :: mensajes}"></th:block>
+    <nav aria-label="Ruta"><ol class="breadcrumb">
+        <li class="breadcrumb-item"><a th:href="@{/}">Inicio</a></li>
+        <li class="breadcrumb-item active" aria-current="page" th:text="${seccion.nombre}">Sección</li>
+    </ol></nav>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+        <div>
+            <h1 class="h3 mb-1" th:text="${seccion.nombre}">Sección</h1>
+            <p th:if="${seccion.descripcion}" th:text="${seccion.descripcion}" class="text-body-secondary mb-0">Descripción</p>
+        </div>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/documentos/subir(seccion=${seccion.id})}" class="btn btn-primary">
+            <i class="bi bi-cloud-upload"></i> Subir aquí
+        </a>
+    </div>
+
+    <!-- Al cambiar el filtro, htmx pide /secciones/{id}?persona=X y sustituye solo #listado. -->
+    <div class="mb-3">
+        <label for="persona" class="form-label">Filtrar por persona</label>
+        <select id="persona" name="persona" class="form-select"
+                th:attr="hx-get=@{/secciones/{id}(id=${seccion.id})}"
+                hx-target="#listado" hx-swap="outerHTML" hx-trigger="change" hx-replace-url="true">
+            <option value="">Todas las personas</option>
+            <option th:each="p : ${personas}" th:value="${p.id}" th:text="${p.nombreCompleto()}"
+                    th:selected="${p.id == personaFiltro}">Persona</option>
+        </select>
+    </div>
+
+    <div id="listado" th:fragment="listado">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="text-body-secondary"
+                  th:text="${#lists.size(documentos) == 1 ? '1 documento' : #lists.size(documentos) + ' documentos'}">0</span>
+            <a th:unless="${#lists.isEmpty(documentos)}"
+               th:href="@{/zip/seccion/{id}(id=${seccion.id}, persona=${personaFiltro})}"
+               class="btn btn-outline-primary btn-sm"><i class="bi bi-file-earmark-zip"></i> Descargar todo (ZIP)</a>
+        </div>
+        <div th:replace="~{fragmentos/documentos :: lista(${documentos})}"></div>
+    </div>
+</main>
+<th:block th:replace="~{fragmentos/layout :: scripts}"></th:block>
+</body>
+</html>

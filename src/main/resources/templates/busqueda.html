@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos/layout :: head('Buscar')}"></head>
+<body>
+<nav th:replace="~{fragmentos/layout :: navbar}"></nav>
+<main class="container pb-5">
+    <h1 class="h3 mb-3">Buscar documentos</h1>
+    <!--
+      Sin JavaScript es un formulario normal. Con htmx, a los 300 ms de dejar de escribir
+      pide /buscar?q=... y sustituye solo #resultados (búsqueda en vivo).
+    -->
+    <form th:action="@{/buscar}" method="get" role="search" class="mb-3">
+        <div class="input-group input-group-lg">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="search" name="q" th:value="${q}" class="form-control" placeholder="Nombre del documento…"
+                   aria-label="Nombre del documento" autofocus autocomplete="off"
+                   th:attr="hx-get=@{/buscar}" hx-trigger="input changed delay:300ms, search"
+                   hx-target="#resultados" hx-swap="outerHTML" hx-replace-url="true" hx-indicator="#buscando">
+        </div>
+        <div class="form-text">No distingue mayúsculas ni tildes: «maria» encuentra «María».
+            <span id="buscando" class="htmx-indicator spinner-border spinner-border-sm ms-1" role="status"></span>
+        </div>
+    </form>
+
+    <div id="resultados" th:fragment="resultados">
+        <th:block th:if="${#strings.isEmpty(#strings.trim(q))}">
+            <p class="text-body-secondary">Escribe para buscar.</p>
+        </th:block>
+        <th:block th:unless="${#strings.isEmpty(#strings.trim(q))}">
+            <p class="text-body-secondary"
+               th:text="${#lists.size(documentos) == 1 ? '1 resultado' : #lists.size(documentos) + ' resultados'}">0</p>
+            <div th:replace="~{fragmentos/documentos :: lista(${documentos})}"></div>
+        </th:block>
+    </div>
+</main>
+<th:block th:replace="~{fragmentos/layout :: scripts}"></th:block>
+</body>
+</html>

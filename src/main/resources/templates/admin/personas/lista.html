@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos/layout :: head('Personas')}"></head>
+<body>
+<nav th:replace="~{fragmentos/layout :: navbar}"></nav>
+<main class="container pb-5">
+    <th:block th:replace="~{fragmentos/layout :: mensajes}"></th:block>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h3 mb-0">Personas</h1>
+        <a th:href="@{/admin/personas/nueva}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Nueva persona</a>
+    </div>
+    <p th:if="${#lists.isEmpty(personas)}" class="text-body-secondary">Todavía no hay personas.</p>
+    <div class="list-group shadow-sm" th:unless="${#lists.isEmpty(personas)}">
+        <div th:each="p : ${personas}" class="list-group-item d-flex flex-wrap gap-2 align-items-center">
+            <a th:href="@{/personas/{id}(id=${p.id})}" class="flex-grow-1 fw-semibold text-decoration-none"
+               th:text="${p.nombreCompleto()}">Persona</a>
+            <a th:href="@{/admin/personas/{id}/editar(id=${p.id})}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-pencil"></i> Editar</a>
+            <a th:href="@{/admin/personas/{id}/borrar(id=${p.id})}" class="btn btn-sm btn-outline-danger">
+                <i class="bi bi-trash"></i> Borrar</a>
+        </div>
+    </div>
+</main>
+<th:block th:replace="~{fragmentos/layout :: scripts}"></th:block>
+</body>
+</html>

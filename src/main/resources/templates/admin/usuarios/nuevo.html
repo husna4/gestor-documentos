@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos/layout :: head('Nuevo usuario')}"></head>
+<body>
+<nav th:replace="~{fragmentos/layout :: navbar}"></nav>
+<main class="container pb-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <h1 class="h3 mb-3">Nuevo usuario</h1>
+            <form th:action="@{/admin/usuarios/nuevo}" th:object="${form}" method="post" class="card card-body shadow-sm">
+                <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger">
+                    <p th:each="error : ${#fields.globalErrors()}" th:text="${error}" class="mb-0">Error</p>
+                </div>
+                <div class="mb-3">
+                    <label for="username" class="form-label">Usuario</label>
+                    <input type="text" th:field="*{username}" class="form-control" th:errorclass="is-invalid"
+                           autocapitalize="none" autocomplete="off" required autofocus>
+                    <div class="invalid-feedback" th:errors="*{username}">Error</div>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Contraseña temporal</label>
+                    <input type="text" th:field="*{password}" class="form-control" th:errorclass="is-invalid"
+                           autocomplete="off" required>
+                    <div class="form-text">Díselo a la persona: tendrá que cambiarla la primera vez que entre.</div>
+                    <div class="invalid-feedback" th:errors="*{password}">Error</div>
+                </div>
+                <div class="mb-3">
+                    <label for="rol" class="form-label">Rol</label>
+                    <select th:field="*{rol}" class="form-select">
+                        <option value="USER">Usuario: solo ver y descargar</option>
+                        <option value="ADMIN">Administrador: además subir, editar, borrar y gestionar</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="personaId" class="form-label">Persona de la familia <span class="text-body-secondary">(opcional)</span></label>
+                    <select th:field="*{personaId}" class="form-select">
+                        <option value="">— Ninguna —</option>
+                        <option th:each="p : ${personas}" th:value="${p.id}" th:text="${p.nombreCompleto()}">Persona</option>
+                    </select>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Crear usuario</button>
+                    <a th:href="@{/admin/usuarios}" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+<th:block th:replace="~{fragmentos/layout :: scripts}"></th:block>
+</body>
+</html>

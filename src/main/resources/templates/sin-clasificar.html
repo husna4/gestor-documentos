@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos/layout :: head('Sin clasificar')}"></head>
+<body>
+<nav th:replace="~{fragmentos/layout :: navbar}"></nav>
+<main class="container pb-5">
+    <nav aria-label="Ruta"><ol class="breadcrumb">
+        <li class="breadcrumb-item"><a th:href="@{/}">Inicio</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Sin clasificar</li>
+    </ol></nav>
+    <h1 class="h3">Sin clasificar</h1>
+    <p class="text-body-secondary">Documentos que no están en ninguna sección.</p>
+    <div th:replace="~{fragmentos/documentos :: lista(${documentos})}"></div>
+</main>
+<th:block th:replace="~{fragmentos/layout :: scripts}"></th:block>
+</body>
+</html>

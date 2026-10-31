@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- Lista de documentos: miniatura o icono, nombre, persona, secciones y botones de ver/descargar. -->
+<div th:fragment="lista(documentos)">
+    <p th:if="${#lists.isEmpty(documentos)}" class="text-body-secondary fst-italic">No hay documentos.</p>
+    <div th:unless="${#lists.isEmpty(documentos)}" class="list-group shadow-sm">
+        <div th:each="d : ${documentos}" class="list-group-item d-flex gap-3 align-items-center py-2">
+            <a th:href="@{/documentos/{id}(id=${d.id})}" class="flex-shrink-0" aria-hidden="true" tabindex="-1">
+                <img th:if="${d.tieneMiniatura}" th:src="@{/documentos/{id}/miniatura(id=${d.id})}"
+                     class="miniatura rounded" alt="" loading="lazy">
+                <span th:unless="${d.tieneMiniatura}" class="miniatura rounded icono-fichero">
+                    <i class="bi" th:classappend="${d.icono()}"></i>
+                </span>
+            </a>
+            <div class="flex-grow-1 min-w-0">
+                <a th:href="@{/documentos/{id}(id=${d.id})}" th:text="${d.nombreVisible}"
+                   class="fw-semibold text-decoration-none d-block text-truncate">Nombre</a>
+                <div class="small text-body-secondary d-flex flex-wrap gap-1 align-items-center">
+                    <a th:if="${d.persona}" th:href="@{/personas/{id}(id=${d.persona.id})}"
+                       class="text-decoration-none me-1"><i class="bi bi-person"></i>
+                        <span th:text="${d.persona.nombreCompleto()}">Persona</span></a>
+                    <a th:each="s : ${d.secciones}" th:href="@{/secciones/{id}(id=${s.id})}"
+                       th:text="${s.nombre}" class="badge rounded-pill text-bg-light border text-decoration-none">Sección</a>
+                    <span th:text="${#temporals.format(d.subidoEn, 'dd/MM/yyyy')}">01/01/2026</span>
+                </div>
+            </div>
+            <div class="d-flex gap-1 flex-shrink-0">
+                <a th:if="${d.previsualizable()}" th:href="@{/documentos/{id}/ver(id=${d.id})}" target="_blank"
+                   class="btn btn-outline-secondary btn-sm" title="Ver" aria-label="Ver"><i class="bi bi-eye"></i></a>
+                <a th:href="@{/documentos/{id}/descargar(id=${d.id})}" class="btn btn-outline-primary btn-sm"
+                   title="Descargar" aria-label="Descargar"><i class="bi bi-download"></i></a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Casillas de secciones y desplegable de persona, comunes a subir y editar. -->
+<th:block th:fragment="campos-clasificacion">
+    <fieldset class="mb-3">
+        <legend class="form-label fs-6">Secciones</legend>
+        <p th:if="${#lists.isEmpty(secciones)}" class="small text-body-secondary">
+            Aún no hay secciones. <a th:href="@{/admin/secciones/nueva}">Crear una</a>.
+        </p>
+        <!--
+          Casillas escritas a mano y no con th:field: th:field añade un <input hidden> detrás de cada una,
+          y el estilo "botón marcado" de Bootstrap necesita que la etiqueta vaya justo después de la casilla.
+          Si no se marca ninguna, no llega el parámetro y el formulario lo trata como lista vacía.
+        -->
+        <div class="d-flex flex-wrap gap-2">
+            <th:block th:each="s : ${secciones}">
+                <input type="checkbox" class="btn-check" name="seccionIds" th:value="${s.id}"
+                       th:id="|seccion-${s.id}|" th:checked="${#lists.contains(form.seccionIds, s.id)}">
+                <label class="btn btn-outline-primary" th:for="|seccion-${s.id}|" th:text="${s.nombre}">Sección</label>
+            </th:block>
+        </div>
+        <div class="form-text">Puedes marcar varias. Sin ninguna, el documento irá a «Sin clasificar».</div>
+    </fieldset>
+    <div class="mb-3">
+        <label for="personaId" class="form-label">Persona</label>
+        <select th:field="*{personaId}" class="form-select">
+            <option value="">— De nadie en concreto —</option>
+            <option th:each="p : ${personas}" th:value="${p.id}" th:text="${p.nombreCompleto()}">Persona</option>
+        </select>
+    </div>
+</th:block>
+
+</body>
+</html>

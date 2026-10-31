@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos/layout :: head(${titulo})}"></head>
+<body>
+<nav th:replace="~{fragmentos/layout :: navbar}"></nav>
+<main class="container pb-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <h1 class="h3 mb-3" th:text="${titulo}">Borrar</h1>
+            <div class="card card-body shadow-sm">
+                <div th:if="${documentos > 0}" class="alert alert-warning">
+                    <strong th:text="${documentos == 1 ? 'Tiene 1 documento.' : 'Tiene ' + documentos + ' documentos.'}">Tiene documentos.</strong>
+                    <span th:text="${consecuencia}">Qué pasará</span>
+                </div>
+                <p th:unless="${documentos > 0}" th:text="${consecuencia}">No tiene documentos.</p>
+                <p>Esta acción no se puede deshacer.</p>
+                <form th:action="@{${accion}}" method="post" class="d-flex gap-2">
+                    <button type="submit" class="btn btn-danger"><i class="bi bi-trash"></i> Sí, borrar</button>
+                    <a th:href="@{${volver}}" class="btn btn-outline-secondary">Cancelar</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+<th:block th:replace="~{fragmentos/layout :: scripts}"></th:block>
+</body>
+</html>

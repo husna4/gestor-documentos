@@ -1,0 +1,50 @@
+# Configuración de la aplicación.
+# Los valores sensibles salen de variables de entorno: ${VARIABLE:valor-por-defecto}.
+
+spring:
+  application:
+    name: gestor-documentos
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/gestordocs}
+    username: ${DB_USER:gestordocs}
+    password: ${DB_PASSWORD}
+  jpa:
+    # Flyway crea el esquema; Hibernate solo comprueba que las entidades encajan con él.
+    hibernate:
+      ddl-auto: validate
+    # Las consultas a BD terminan en el service, nunca durante el renderizado de la vista.
+    open-in-view: false
+  servlet:
+    multipart:
+      # Tamaño máximo de cada fichero y de una subida completa (varios ficheros a la vez).
+      max-file-size: ${APP_MAX_FILE_SIZE:20MB}
+      max-request-size: ${APP_MAX_REQUEST_SIZE:200MB}
+
+server:
+  # 0.0.0.0 = escuchar en todas las interfaces de red, para entrar desde otros dispositivos de casa.
+  address: 0.0.0.0
+  # 8090 y no 8080, que en este PC ya lo usa Open WebUI.
+  port: ${APP_PORT:8090}
+  servlet:
+    session:
+      timeout: 8h
+  tomcat:
+    # Sin esto, si alguien sube un fichero demasiado grande el navegador ve "conexión cortada"
+    # en vez de nuestro mensaje de error.
+    max-swallow-size: -1
+
+app:
+  # Admin que se crea en el primer arranque (si no hay ningún usuario).
+  # Tendrá que cambiar la contraseña en su primer login.
+  admin:
+    username: ${ADMIN_USERNAME:}
+    password: ${ADMIN_PASSWORD:}
+  # "Recordarme" en el login: clave para firmar la cookie y su duración.
+  recordarme:
+    clave: ${REMEMBER_ME_KEY}
+    validez: 30d
+  # Carpeta donde se guardan los ficheros subidos. En la BD solo hay metadatos.
+  storage:
+    path: ${APP_STORAGE_PATH:./datos/ficheros}
+  documentos:
+    tamano-maximo: ${APP_MAX_FILE_SIZE:20MB}
