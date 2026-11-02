@@ -13,9 +13,16 @@ import jakarta.validation.constraints.Size;
 public record SubidaForm(
         List<Long> seccionIds,
         Long personaId,
-        @Size(max = 2000, message = "Máximo {max} caracteres") String descripcion) {
+        @Size(max = 2000, message = "Máximo {max} caracteres") String descripcion,
+        Boolean escanearFotos) {
+
+    /** Las llamadas que no solicitan escaneo conservan el flujo de almacenamiento original. */
+    public SubidaForm(List<Long> seccionIds, Long personaId, String descripcion) {
+        this(seccionIds, personaId, descripcion, false);
+    }
 
     public SubidaForm {
         seccionIds = seccionIds == null ? List.of() : List.copyOf(seccionIds);
+        escanearFotos = Boolean.TRUE.equals(escanearFotos);
     }
 }

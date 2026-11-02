@@ -40,6 +40,11 @@ public final class TiposFichero {
     private TiposFichero() {
     }
 
+    /** Formatos de imagen fija que entiende la API de DocScanner. GIF se guarda sin escanear. */
+    public static boolean esEscaneable(String tipoMime) {
+        return Set.of("image/jpeg", "image/png", "image/webp", "image/heic", "image/heif").contains(tipoMime);
+    }
+
     public static boolean esAceptado(String tipoMime) {
         return ACEPTADOS.containsKey(tipoMime);
     }

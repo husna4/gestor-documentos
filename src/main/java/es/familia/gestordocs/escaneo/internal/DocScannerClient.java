@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.ProxySelector;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
+import java.net.http.HttpTimeoutException;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -88,6 +89,9 @@ public class DocScannerClient implements EscaneoService {
             }
             if (causa instanceof RespuestaLimitada.RespuestaDemasiadoGrande) {
                 throw new EscaneoException("La imagen procesada supera el tamaño máximo de respuesta.");
+            }
+            if (causa instanceof HttpTimeoutException) {
+                throw new EscaneoException("El escáner ha tardado demasiado." + RECUPERACION);
             }
             throw new EscaneoException("No se ha podido contactar con el escáner. Comprueba que está iniciado."
                     + RECUPERACION);

@@ -17,6 +17,10 @@
                 <ul class="mb-0"><li th:each="e : ${rechazados}" th:text="${e}">error</li></ul>
             </div>
 
+            <div th:if="${avisos != null and !#lists.isEmpty(avisos)}" class="alert alert-warning" role="status">
+                <ul class="mb-0"><li th:each="aviso : ${avisos}" th:text="${aviso}">Aviso del escaneo</li></ul>
+            </div>
+
             <form th:action="@{/documentos/subir}" th:object="${form}" method="post"
                   enctype="multipart/form-data" class="card card-body shadow-sm"
                   th:attr="data-tamano-maximo=${tamanoMaximoBytes}">
@@ -43,6 +47,19 @@
                     <div id="demasiado-grandes" class="alert alert-danger small mt-2 mb-0 d-none"></div>
                     <div class="form-text">Imágenes, PDF y documentos de Office/LibreOffice.
                         Máximo <span th:text="${tamanoMaximo}">20 MB</span> por fichero.</div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="escanearFotos" th:field="*{escanearFotos}"
+                               aria-describedby="ayuda-escaneo">
+                        <label class="form-check-label" for="escanearFotos">Escanear fotos antes de guardar</label>
+                    </div>
+                    <div class="form-text" id="ayuda-escaneo">
+                        Recorta el documento, corrige la perspectiva y mejora la iluminación de fotos JPEG, PNG,
+                        WebP y HEIC/HEIF. Los demás archivos se guardan tal como los subes.
+                        Desactívalo para conservar la foto original.
+                    </div>
                 </div>
 
                 <th:block th:replace="~{fragmentos/documentos :: campos-clasificacion}"></th:block>
@@ -94,7 +111,8 @@
         selectores.forEach(s => s.addEventListener('change', actualizar));
         boton.closest('form').addEventListener('submit', () => {
             boton.disabled = true;
-            boton.lastChild.textContent = ' Subiendo…';
+            boton.lastChild.textContent = document.getElementById('escanearFotos').checked
+                ? ' Escaneando y guardando…' : ' Subiendo…';
         });
     })();
 </script>
