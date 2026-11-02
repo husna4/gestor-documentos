@@ -71,6 +71,28 @@ El administrador crea las personas, secciones y usuarios, y sube los documentos.
 
 El botón **Hacer foto** permite capturar una imagen desde el móvil. Las imágenes y los PDF se muestran en el visor; los demás formatos se descargan.
 
+## Escaneo automático de fotos
+
+El formulario de subida tiene activada por defecto la opción **Escanear fotos antes de guardar**.
+El backend Java envía las imágenes JPEG, PNG, WebP y HEIC/HEIF a DocScanner para recortar el documento,
+corregir la perspectiva y mejorar la iluminación. Guarda el resultado como JPEG, con su tamaño, nombre,
+miniatura y clasificación actualizados. Los demás archivos, incluidos PDF y GIF, no se envían al escáner.
+
+DocScanner debe estar arrancado antes de subir fotos con esta opción. La conexión se realiza desde el
+backend; el móvil solo necesita acceder al gestor y no se conecta directamente al servicio de escaneo.
+
+| Variable | Predeterminado |
+|---|---|
+| `DOCSCANNER_URL` | `http://127.0.0.1:8091/api/scan` |
+| `DOCSCANNER_CONNECT_TIMEOUT` | `3s` |
+| `DOCSCANNER_REQUEST_TIMEOUT` | `30s`, incluyendo la respuesta completa |
+| `DOCSCANNER_MAX_RESPONSE_SIZE` | `20MB` |
+
+Si no se detectan bordes, se guarda la imagen completa devuelta y se muestra un aviso. Si DocScanner no
+responde, devuelve un error o el resultado supera el tamaño permitido, la foto no se guarda y se muestra
+un mensaje para reintentar. Los demás archivos válidos del lote pueden guardarse. Puedes desmarcar la
+opción para conservar el original sin utilizar el escáner.
+
 ## Almacenamiento y copias de seguridad
 
 PostgreSQL guarda los metadatos. Los archivos y las miniaturas se almacenan en disco mediante claves UUID, dentro de `APP_STORAGE_PATH`. Las descargas requieren una sesión autenticada.
@@ -95,6 +117,16 @@ Con PostgreSQL en marcha y `DB_PASSWORD` configurada:
 Las pruebas utilizan `gestordocs_test` y `target/ficheros-test`. Cubren arquitectura modular, autenticación, permisos, subida y validación de archivos, búsquedas, ZIP, borrados y renderizado de pantallas.
 
 La carpeta `muestras/` contiene archivos para pruebas manuales, incluidos tipos no permitidos. No forma parte del almacenamiento de documentos de la aplicación.
+
+Las pruebas habituales simulan el servicio de escaneo y no necesitan DocScanner en marcha.
+Para comprobar también el recorrido con el servicio real, utilizando únicamente una foto sintética y
+la base de datos de tests:
+
+```powershell
+$env:DOCSCANNER_LIVE_TEST = 'true'
+.\mvnw.cmd test
+Remove-Item Env:DOCSCANNER_LIVE_TEST
+```
 
 ## Empaquetado
 

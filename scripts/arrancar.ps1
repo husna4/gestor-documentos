@@ -5,7 +5,9 @@
 #   powershell -ExecutionPolicy Bypass -File scripts\arrancar.ps1
 
 $variables = 'DB_URL', 'DB_USER', 'DB_PASSWORD', 'ADMIN_USERNAME', 'ADMIN_PASSWORD', 'REMEMBER_ME_KEY',
-             'APP_PORT', 'APP_STORAGE_PATH', 'APP_MAX_FILE_SIZE', 'APP_MAX_REQUEST_SIZE'
+             'APP_PORT', 'APP_STORAGE_PATH', 'APP_MAX_FILE_SIZE', 'APP_MAX_REQUEST_SIZE',
+             'DOCSCANNER_URL', 'DOCSCANNER_CONNECT_TIMEOUT', 'DOCSCANNER_REQUEST_TIMEOUT',
+             'DOCSCANNER_MAX_RESPONSE_SIZE'
 foreach ($v in $variables) {
     $valor = [Environment]::GetEnvironmentVariable($v, 'User')
     if ($valor) { Set-Item -Path "Env:$v" -Value $valor }
