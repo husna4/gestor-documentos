@@ -37,3 +37,30 @@ build/
 datos/
 # Fichero de prueba de 21 MB (se puede regenerar): no merece la pena versionarlo
 muestras/demasiado-grande.pdf
+
+### Instrucciones y seguimiento locales ###
+.claude/
+.codex/
+.agents/
+.cursor/
+CLAUDE*.md
+claude*.md
+AGENTS.md
+agents.md
+MEMORY.md
+memory.md
+/PLAN*.md
+/plan*.md
+.github/copilot-instructions.md
+.aider*
+.cursorrules
+.windsurfrules
+.clinerules
+
+### Configuración privada y copias locales ###
+.env
+.env.*
+!.env.example
+*.dump
+*.backup
+copia*.zip
