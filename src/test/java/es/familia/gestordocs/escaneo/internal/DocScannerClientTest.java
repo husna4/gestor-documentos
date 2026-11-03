@@ -191,6 +191,24 @@ class DocScannerClientTest {
                 Duration.ofSeconds(1), DataSize.ofMegabytes(1))).isInstanceOf(IllegalArgumentException.class);
     }
 
+    @Test
+    void enviaElFiltroElegidoYPermiteDesactivarRecorte() {
+        respuesta.set(e -> enviar(e, 200, jpeg, "image/jpeg", "disabled", false));
+        var resultado = cliente().escanear(jpeg, "image/jpeg", es.familia.gestordocs.escaneo.FiltroEscaneo.bw, false);
+        assertThat(resultado.contenido()).isEqualTo(jpeg);
+        assertThat(new String(peticion.get(), StandardCharsets.ISO_8859_1))
+                .contains("name=\"filter\"\r\n\r\nbw", "name=\"auto_crop\"\r\n\r\nfalse");
+    }
+
+    @Test
+    void rechazaJpegTruncadoAunqueContengaDimensionesYMarcadorFinalFalso() {
+        var truncado = java.util.Arrays.copyOf(jpeg, 700);
+        truncado[698] = (byte) 0xff; truncado[699] = (byte) 0xd9;
+        respuesta.set(e -> enviar(e, 200, truncado, "image/jpeg", "detected", false));
+        assertThatThrownBy(() -> cliente().escanear(jpeg, "image/jpeg"))
+                .isInstanceOf(EscaneoException.class);
+    }
+
     private static void enviar(HttpExchange e, int status, byte[] body, String mime, String deteccion,
                                boolean chunked) throws IOException {
         e.getResponseHeaders().set("Content-Type", mime);

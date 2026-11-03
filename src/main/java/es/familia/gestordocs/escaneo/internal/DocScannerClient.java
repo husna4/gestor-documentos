@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 
 import es.familia.gestordocs.escaneo.EscaneoException;
 import es.familia.gestordocs.escaneo.EscaneoService;
+import es.familia.gestordocs.escaneo.FiltroEscaneo;
 import es.familia.gestordocs.escaneo.ResultadoEscaneo;
 import jakarta.annotation.PreDestroy;
 
@@ -49,6 +50,12 @@ public class DocScannerClient implements EscaneoService {
 
     @Override
     public ResultadoEscaneo escanear(byte[] imagen, String tipoMime) {
+        return escanear(imagen, tipoMime, FiltroEscaneo.enhanced, true);
+    }
+
+    @Override
+    public ResultadoEscaneo escanear(byte[] imagen, String tipoMime, FiltroEscaneo filtro, boolean autoRecorte) {
+        java.util.Objects.requireNonNull(filtro, "filtro");
         var extension = EXTENSIONES.get(tipoMime);
         if (extension == null) {
             throw new EscaneoException("El formato de esta imagen no admite escaneo automático.");
@@ -59,9 +66,9 @@ public class DocScannerClient implements EscaneoService {
                 + "Content-Disposition: form-data; name=\"file\"; filename=\"foto." + extension + "\"\r\n"
                 + "Content-Type: " + tipoMime + "\r\n\r\n").getBytes(StandardCharsets.US_ASCII);
         var finalParte = ("\r\n--" + boundary + "\r\n"
-                + "Content-Disposition: form-data; name=\"filter\"\r\n\r\nenhanced\r\n"
+                + "Content-Disposition: form-data; name=\"filter\"\r\n\r\n" + filtro.name() + "\r\n"
                 + "--" + boundary + "\r\n"
-                + "Content-Disposition: form-data; name=\"auto_crop\"\r\n\r\ntrue\r\n"
+                + "Content-Disposition: form-data; name=\"auto_crop\"\r\n\r\n" + autoRecorte + "\r\n"
                 + "--" + boundary + "--\r\n").getBytes(StandardCharsets.US_ASCII);
         var peticion = HttpRequest.newBuilder(propiedades.url())
                 .timeout(propiedades.tiempoRespuesta())
@@ -111,11 +118,15 @@ public class DocScannerClient implements EscaneoService {
         var tipo = respuesta.headers().firstValue("Content-Type").orElse("").split(";")[0].trim();
         var deteccion = respuesta.headers().firstValue("X-Scan-Detection").orElse("");
         if (!"image/jpeg".equalsIgnoreCase(tipo)
-                || !("detected".equals(deteccion) || "not_detected".equals(deteccion))) {
+                || !("detected".equals(deteccion) || "not_detected".equals(deteccion) || "disabled".equals(deteccion))) {
             throw new EscaneoException("El escáner ha devuelto una respuesta no válida." + RECUPERACION);
         }
         var contenido = respuesta.body();
-        // Validar formato y dimensiones sin cargar una imagen entera ni crear cachés en disco.
+        if (contenido.length < 4 || contenido[contenido.length - 2] != (byte) 0xff
+                || contenido[contenido.length - 1] != (byte) 0xd9) {
+            throw new EscaneoException("El escáner ha devuelto una imagen no válida o incompleta." + RECUPERACION);
+        }
+        // Acotar las dimensiones antes de decodificar; no crear cachés en disco.
         try (var input = new MemoryCacheImageInputStream(new ByteArrayInputStream(contenido))) {
             var readers = ImageIO.getImageReaders(input);
             if (!readers.hasNext()) {
@@ -123,6 +134,9 @@ public class DocScannerClient implements EscaneoService {
             }
             var reader = readers.next();
             try {
+                reader.addIIOReadWarningListener((source, warning) -> {
+                    throw new EscaneoException("El escáner ha devuelto una imagen no válida o incompleta." + RECUPERACION);
+                });
                 reader.setInput(input, true, true);
                 var ancho = reader.getWidth(0);
                 var alto = reader.getHeight(0);
@@ -130,6 +144,9 @@ public class DocScannerClient implements EscaneoService {
                         || (long) ancho * alto > 40_000_000) {
                     throw new IOException("Dimensiones o formato de imagen no válidos");
                 }
+                var imagen = reader.read(0);
+                if (imagen == null) { throw new IOException("Imagen no decodificable"); }
+                imagen.flush();
             } finally {
                 reader.dispose();
             }
