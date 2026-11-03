@@ -6,7 +6,7 @@ Aplicación web para organizar documentos por personas y secciones, con acceso d
 
 - Usuarios con roles de administrador y consulta.
 - Gestión de personas, secciones y clasificación de documentos.
-- Subida múltiple y captura de fotos desde el móvil.
+- Subida múltiple y captura de fotos desde el móvil, con previsualización y filtros antes de guardar.
 - Validación del contenido de los archivos, límites de tamaño y miniaturas.
 - Búsqueda sin distinguir tildes, previsualización de imágenes y PDF, y descarga individual o en ZIP.
 - Inicio de sesión, cambio de contraseña y permisos por rol.
@@ -73,25 +73,43 @@ El botón **Hacer foto** permite capturar una imagen desde el móvil. Las imáge
 
 ## Escaneo automático de fotos
 
-El formulario de subida tiene activada por defecto la opción **Escanear fotos antes de guardar**.
-El backend Java envía las imágenes JPEG, PNG, WebP y HEIC/HEIF a DocScanner para recortar el documento,
-corregir la perspectiva y mejorar la iluminación. Guarda el resultado como JPEG, con su tamaño, nombre,
-miniatura y clasificación actualizados. Los demás archivos, incluidos PDF y GIF, no se envían al escáner.
+El formulario permite previsualizar cada foto antes de guardarla. Ofrece documento mejorado,
+escala de grises, blanco y negro y sin filtro (manteniendo recorte y perspectiva). **Foto original**
+conserva el archivo sin cambios. Puedes comparar con el original, ampliar la vista o quitar fotos.
+Cada foto tiene su propia selección; los PDF, GIF y demás documentos mantienen su formato original.
 
-DocScanner debe estar arrancado antes de subir fotos con esta opción. La conexión se realiza desde el
-backend; el móvil solo necesita acceder al gestor y no se conecta directamente al servicio de escaneo.
+El móvil sube cada foto una sola vez al gestor. Java llama a DocScanner al solicitar un filtro nuevo
+y conserva temporalmente la variante: volver a un filtro ya calculado no repite el procesamiento.
+**Guardar documento** guarda exactamente la versión elegida, sin volver a escanear. Si un archivo
+falla, permanece en pantalla para reintentarlo; los guardados se retiran de la lista.
+
+DocScanner debe estar iniciado para aplicar filtros. El navegador solo se conecta al gestor.
+Si no se detectan bordes, se informa y el filtro se aplica a la imagen completa. Si falla el servicio,
+puedes reintentar o elegir **Foto original**. Los filtros siempre parten de la fuente subida.
 
 | Variable | Predeterminado |
 |---|---|
 | `DOCSCANNER_URL` | `http://127.0.0.1:8091/api/scan` |
 | `DOCSCANNER_CONNECT_TIMEOUT` | `3s` |
-| `DOCSCANNER_REQUEST_TIMEOUT` | `30s`, incluyendo la respuesta completa |
+| `DOCSCANNER_REQUEST_TIMEOUT` | `30s` por llamada, incluyendo la respuesta completa |
 | `DOCSCANNER_MAX_RESPONSE_SIZE` | `20MB` |
+| `APP_SCAN_TEMP_PATH` | `./datos/temporales/escaneo` |
+| `APP_SCAN_TEMP_TTL` | `30m` sin actividad por borrador |
+| `APP_SCAN_TEMP_MAX_SIZE` | `500MB` para fuentes y variantes de todos los usuarios |
+| `APP_SCAN_TEMP_MAX_PER_USER` | `20` borradores por usuario |
+| `APP_SCAN_TEMP_MAX_TOTAL` | `100` borradores en total |
 
-Si no se detectan bordes, se guarda la imagen completa devuelta y se muestra un aviso. Si DocScanner no
-responde, devuelve un error o el resultado supera el tamaño permitido, la foto no se guarda y se muestra
-un mensaje para reintentar. Los demás archivos válidos del lote pueden guardarse. Puedes desmarcar la
-opción para conservar el original sin utilizar el escáner.
+Los temporales pertenecen al administrador que los creó, se sirven con autenticación y `no-store`,
+y sus operaciones requieren CSRF. Se eliminan al descartar o después de confirmar el guardado en BD.
+Un rollback conserva el borrador. La limpieza se ejecuta al arrancar y cada minuto; los errores de
+borrado se reintentan. Cerrar la página deja el borrador hasta su caducidad.
+
+Esta implementación está preparada para **una instancia** del gestor. Sus metadatos temporales están
+en memoria: un reinicio invalida los borradores pendientes y sus restos se limpian cuando caducan.
+Los documentos ya guardados no se ven afectados. El almacenamiento de borradores tiene una interfaz
+independiente para sustituir el disco local; varias instancias requerirían también metadatos y bloqueos
+compartidos. La ruta temporal debe ser exclusiva del servicio y distinta de los archivos definitivos;
+no se sirve como carpeta pública ni debe versionarse si se cambia fuera de `datos/`.
 
 ## Almacenamiento y copias de seguridad
 
@@ -114,11 +132,13 @@ Con PostgreSQL en marcha y `DB_PASSWORD` configurada:
 .\mvnw.cmd test
 ```
 
-Las pruebas utilizan `gestordocs_test` y `target/ficheros-test`. Cubren arquitectura modular, autenticación, permisos, subida y validación de archivos, búsquedas, ZIP, borrados y renderizado de pantallas.
+Las pruebas utilizan `gestordocs_test`, `target/ficheros-test` y `target/borradores-test`. Cubren arquitectura modular, autenticación, permisos, subida y validación de archivos, búsquedas, ZIP, borrados y renderizado de pantallas.
 
 La carpeta `muestras/` contiene archivos para pruebas manuales, incluidos tipos no permitidos. No forma parte del almacenamiento de documentos de la aplicación.
 
 Las pruebas habituales simulan el servicio de escaneo y no necesitan DocScanner en marcha.
+Cubren reutilización de filtros, aislamiento de propietarios, CSRF y roles, cuotas, caducidad,
+JPEG incompletos y limpieza de borradores después de commit, rollback y fallos de borrado.
 Para comprobar también el recorrido con el servicio real, utilizando únicamente una foto sintética y
 la base de datos de tests:
 
