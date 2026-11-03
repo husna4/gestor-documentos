@@ -64,10 +64,12 @@ public class DocumentoService {
     private final UsuarioService usuarioService;
     private final DocumentosProperties propiedades;
     private final EscaneoService escaneo;
+    private final BorradorEscaneoService borradores;
 
     DocumentoService(DocumentoRepository documentos, StorageService storage, DetectorTipo detectorTipo,
             GeneradorMiniaturas miniaturas, PersonaService personaService, SeccionService seccionService,
-            UsuarioService usuarioService, DocumentosProperties propiedades, EscaneoService escaneo) {
+            UsuarioService usuarioService, DocumentosProperties propiedades, EscaneoService escaneo,
+            BorradorEscaneoService borradores) {
         this.documentos = documentos;
         this.storage = storage;
         this.detectorTipo = detectorTipo;
@@ -77,6 +79,7 @@ public class DocumentoService {
         this.usuarioService = usuarioService;
         this.propiedades = propiedades;
         this.escaneo = escaneo;
+        this.borradores = borradores;
     }
 
     // ---- Consultas ----
@@ -157,8 +160,19 @@ public class DocumentoService {
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public ResultadoSubida subir(SubidaForm datos, List<FicheroSubido> ficheros) {
-        if (ficheros.isEmpty()) {
+        return subir(datos, ficheros, List.of());
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
+    public ResultadoSubida subir(SubidaForm datos, List<FicheroSubido> ficheros,
+                                 List<SeleccionBorrador> selecciones) {
+        if (ficheros.isEmpty() && selecciones.isEmpty()) {
             throw new ReglaNegocioException("Elige al menos un fichero.");
+        }
+        if (selecciones.size() > 20 || selecciones.stream().map(SeleccionBorrador::id).distinct().count()
+                != selecciones.size()) {
+            throw new ReglaNegocioException("La selección de fotos pendientes no es válida.");
         }
         validarSeccionesYPersona(datos.seccionIds(), datos.personaId());
         var subidoPor = usuarioService.idUsuarioActual()
@@ -188,6 +202,35 @@ public class DocumentoService {
             } catch (IOException e) {
                 log.error("Error leyendo el fichero subido {}", nombre, e);
                 errores.add(nombre + ": no se pudo leer el fichero.");
+            }
+        }
+        for (var seleccion : selecciones) {
+            BorradorEscaneoService.ReservaBorrador reserva = null;
+            boolean sincronizada = false;
+            try {
+                reserva = borradores.reservar(seleccion);
+                var fichero = reserva.fichero();
+                var nombre = NombresFichero.limpiar(fichero.nombreOriginal());
+                var error = validarFichero(fichero);
+                if (error.isPresent()) { throw new ReglaNegocioException(error.get()); }
+                // Ya se ha previsualizado: guardar sus bytes sin volver a escanear.
+                var preparado = prepararFichero(fichero, nombre, false);
+                guardados.add(guardarFichero(preparado.fichero(), preparado.nombre(), preparado.tipo(), datos, subidoPor));
+                var pendiente = reserva;
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCompletion(int estado) {
+                        borradores.terminarReserva(pendiente, estado == STATUS_COMMITTED);
+                    }
+                });
+                sincronizada = true;
+            } catch (es.familia.gestordocs.compartido.NoEncontradoException | ReglaNegocioException
+                    | TipoNoPermitido e) {
+                errores.add("Foto pendiente: " + e.getMessage());
+            } catch (IOException e) {
+                errores.add("Foto pendiente: no se pudo leer el fichero.");
+            } finally {
+                if (reserva != null && !sincronizada) { borradores.terminarReserva(reserva, false); }
             }
         }
         return new ResultadoSubida(aDtos(guardados), errores, avisos);

@@ -60,6 +60,39 @@ class DocScannerRealTest {
         }
     }
 
+    @Autowired BorradorEscaneoService borradores;
+
+    @Test
+    void previsualizaCuatroFiltrosYGuardaExactamenteElElegido() throws Exception {
+        sesion.comoAdmin();
+        var muestra = new ClassPathResource("escaneo/documento-inclinado.jpg").getContentAsByteArray();
+        var id = borradores.crear(new FicheroSubido("vista-real.jpg", muestra.length, new ByteArrayResource(muestra))).id();
+        try {
+            for (var filtro : List.of("enhanced", "grayscale", "bw", "original")) {
+                assertThat(borradores.filtrar(id, filtro).sinBordes()).isFalse();
+                var vista = borradores.imagen(id, filtro).contenido();
+                try (var input = new java.io.ByteArrayInputStream(vista)) {
+                    var imagen = ImageIO.read(input);
+                    assertThat(imagen.getWidth()).isBetween(750, 810);
+                    assertThat(imagen.getHeight()).isBetween(730, 800);
+                    imagen.flush();
+                }
+            }
+            assertThat(borradores.imagen(id, "fuente").contenido()).isEqualTo(muestra);
+            var elegida = borradores.imagen(id, "bw").contenido();
+            var guardado = documentos.subir(new SubidaForm(List.of(), null, "Vista real"), List.of(),
+                    List.of(new SeleccionBorrador(id, "bw")));
+            assertThat(guardado.errores()).isEmpty();
+            assertThat(documentos.contenido(guardado.subidos().getFirst().id()).recurso().getContentAsByteArray())
+                    .isEqualTo(elegida);
+        } finally {
+            org.springframework.test.context.transaction.TestTransaction.flagForRollback();
+            org.springframework.test.context.transaction.TestTransaction.end();
+            borradores.descartar(id);
+            org.springframework.test.context.transaction.TestTransaction.start();
+        }
+    }
+
     @Test
     void sinDocumentoSeConservaElEncuadreConAviso() throws Exception {
         sesion.comoAdmin();

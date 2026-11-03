@@ -15,3 +15,9 @@ app:
   documentos:
     # Pequeño a propósito, para probar el límite sin crear ficheros enormes.
     tamano-maximo: 100KB
+  borradores:
+    ruta: target/borradores-test
+    caducidad: 30m
+    espacio-maximo: 10MB
+    maximo-por-usuario: 20
+    maximo-total: 100

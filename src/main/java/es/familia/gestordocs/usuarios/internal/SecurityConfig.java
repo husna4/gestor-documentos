@@ -29,7 +29,7 @@ class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login", "/webjars/**", "/css/**", "/favicon.ico", "/error").permitAll()
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/admin/**", "/documentos/escaneos", "/documentos/escaneos/**").hasRole("ADMIN")
                         .requestMatchers("/documentos/subir", "/documentos/*/editar", "/documentos/*/borrar")
                         .hasRole("ADMIN")
                         .anyRequest().authenticated())
