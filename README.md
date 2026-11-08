@@ -84,7 +84,9 @@ El gestor conserva temporalmente el resultado para reutilizarlo si vuelves a ele
 **Guardar documento** guarda exactamente la versión elegida, sin volver a escanear. Si un archivo
 falla, permanece en pantalla para reintentarlo; los guardados se retiran de la lista.
 
-DocScanner debe estar iniciado para aplicar filtros. El navegador solo se conecta al gestor.
+El servicio debe estar iniciado para aplicar filtros. Descarga el código de
+[Doc Scanner](https://github.com/husna4/doc-scanner) y sigue las instrucciones de su README
+para instalarlo y arrancarlo en tu equipo. El navegador solo se conecta al gestor.
 Si no se detectan bordes, se informa y el filtro se aplica a la imagen completa. Si falla el servicio,
 puedes reintentar o elegir **Foto original**.
 
