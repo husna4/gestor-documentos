@@ -100,17 +100,12 @@ puedes reintentar o elegir **Foto original**.
 | `APP_SCAN_TEMP_MAX_PER_USER` | `20` borradores por usuario |
 | `APP_SCAN_TEMP_MAX_TOTAL` | `100` borradores en total |
 
-Los temporales pertenecen al administrador que los creó, se sirven con autenticación y `no-store`,
-y sus operaciones requieren CSRF. Se eliminan al descartar o después de confirmar el guardado en BD.
-Un rollback conserva el borrador. La limpieza se ejecuta al arrancar y cada minuto; los errores de
-borrado se reintentan. Cerrar la página deja el borrador hasta su caducidad.
+Solo el administrador que subió la foto puede acceder a su borrador. Se elimina al guardar o
+descartar la foto, o tras 30 minutos de inactividad por defecto.
 
-Esta implementación está preparada para **una instancia** del gestor. Sus metadatos temporales están
-en memoria: un reinicio invalida los borradores pendientes y sus restos se limpian cuando caducan.
-Los documentos ya guardados no se ven afectados. El almacenamiento de borradores tiene una interfaz
-independiente para sustituir el disco local; varias instancias requerirían también metadatos y bloqueos
-compartidos. La ruta temporal debe ser exclusiva del servicio y distinta de los archivos definitivos;
-no se sirve como carpeta pública ni debe versionarse si se cambia fuera de `datos/`.
+Los borradores funcionan con una sola instancia del gestor. Un reinicio hace que los borradores
+pendientes dejen de estar disponibles. Los documentos guardados siguen disponibles.
+Usa una carpeta temporal exclusiva, separada de los documentos guardados y fuera de Git.
 
 ## Almacenamiento y copias de seguridad
 
