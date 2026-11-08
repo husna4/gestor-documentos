@@ -78,14 +78,15 @@ escala de grises, blanco y negro y sin filtro (manteniendo recorte y perspectiva
 conserva el archivo sin cambios. Puedes comparar con el original, ampliar la vista o quitar fotos.
 Cada foto tiene su propia selección; los PDF, GIF y demás documentos mantienen su formato original.
 
-El móvil sube cada foto una sola vez al gestor. Java llama a DocScanner al solicitar un filtro nuevo
-y conserva temporalmente la variante: volver a un filtro ya calculado no repite el procesamiento.
+El móvil sube cada foto una sola vez al gestor. Para cada filtro nuevo, el gestor envía el archivo
+original a DocScanner, que detecta los bordes, recorta, corrige la perspectiva y aplica el filtro.
+El gestor conserva temporalmente el resultado para reutilizarlo si vuelves a elegir ese filtro.
 **Guardar documento** guarda exactamente la versión elegida, sin volver a escanear. Si un archivo
 falla, permanece en pantalla para reintentarlo; los guardados se retiran de la lista.
 
 DocScanner debe estar iniciado para aplicar filtros. El navegador solo se conecta al gestor.
 Si no se detectan bordes, se informa y el filtro se aplica a la imagen completa. Si falla el servicio,
-puedes reintentar o elegir **Foto original**. Los filtros siempre parten de la fuente subida.
+puedes reintentar o elegir **Foto original**.
 
 | Variable | Predeterminado |
 |---|---|
