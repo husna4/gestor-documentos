@@ -17,9 +17,13 @@
                 <ul class="mb-0"><li th:each="e : ${rechazados}" th:text="${e}">error</li></ul>
             </div>
 
+            <div th:if="${avisos != null and !#lists.isEmpty(avisos)}" class="alert alert-warning" role="status">
+                <ul class="mb-0"><li th:each="aviso : ${avisos}" th:text="${aviso}">Aviso del escaneo</li></ul>
+            </div>
+
             <form th:action="@{/documentos/subir}" th:object="${form}" method="post"
                   enctype="multipart/form-data" class="card card-body shadow-sm"
-                  th:attr="data-tamano-maximo=${tamanoMaximoBytes}">
+                  th:attr="data-tamano-maximo=${tamanoMaximoBytes},data-escaneos-url=@{/documentos/escaneos}">
                 <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger">
                     <p th:each="error : ${#fields.globalErrors()}" th:text="${error}" class="mb-0">Error</p>
                 </div>
@@ -45,6 +49,24 @@
                         Máximo <span th:text="${tamanoMaximo}">20 MB</span> por fichero.</div>
                 </div>
 
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="escanearFotos" th:field="*{escanearFotos}"
+                               aria-describedby="ayuda-escaneo">
+                        <label class="form-check-label" for="escanearFotos">Escanear fotos antes de guardar</label>
+                    </div>
+                    <div class="form-text" id="ayuda-escaneo">
+                        Previsualiza fotos JPEG, PNG, WebP y HEIC/HEIF antes de guardarlas y elige el filtro de cada una.
+                        «Sin filtro» mantiene el recorte; «Foto original» conserva el archivo sin cambios.
+                        Desactívalo para seleccionar el original en todas las fotos pendientes.
+                        Los demás archivos se guardan tal como los subes.
+                    </div>
+                </div>
+
+                <div id="resultado-subida" class="d-none" role="status" aria-live="polite"></div>
+                <div id="previsualizaciones" class="d-grid gap-3 mb-3" aria-label="Fotos y archivos pendientes"></div>
+                <button type="button" id="descartar-todos" class="btn btn-outline-secondary mb-3 d-none">Descartar pendientes</button>
+
                 <th:block th:replace="~{fragmentos/documentos :: campos-clasificacion}"></th:block>
 
                 <div class="mb-3">
@@ -61,42 +83,7 @@
     </div>
 </main>
 <th:block th:replace="~{fragmentos/layout :: scripts}"></th:block>
-<script>
-    // Muestra los ficheros elegidos (de la cámara y del selector) y activa el botón cuando hay alguno.
-    // Si alguno supera el tamaño máximo avisa antes de enviar: el servidor rechazaría la subida entera.
-    (function () {
-        const selectores = document.querySelectorAll('[data-selector-ficheros]');
-        const lista = document.getElementById('elegidos');
-        const aviso = document.getElementById('demasiado-grandes');
-        const boton = document.getElementById('boton-subir');
-        const maximo = Number(boton.closest('form').dataset.tamanoMaximo);
-        function actualizar() {
-            lista.replaceChildren();
-            const grandes = [];
-            let total = 0;
-            selectores.forEach(s => Array.from(s.files).forEach(f => {
-                const li = document.createElement('li');
-                li.textContent = '📄 ' + f.name + ' (' + Math.max(1, Math.round(f.size / 1024)) + ' KB)';
-                lista.appendChild(li);
-                total++;
-                if (f.size > maximo) {
-                    grandes.push(f.name);
-                }
-            }));
-            aviso.textContent = grandes.length
-                ? 'Demasiado grande (máximo ' + Math.round(maximo / 1048576) + ' MB): ' + grandes.join(', ')
-                  + '. Quítalo o redúcelo antes de subir.'
-                : '';
-            aviso.classList.toggle('d-none', grandes.length === 0);
-            boton.disabled = total === 0 || grandes.length > 0;
-            boton.lastChild.textContent = total > 1 ? ' Subir ' + total + ' ficheros' : ' Subir';
-        }
-        selectores.forEach(s => s.addEventListener('change', actualizar));
-        boton.closest('form').addEventListener('submit', () => {
-            boton.disabled = true;
-            boton.lastChild.textContent = ' Subiendo…';
-        });
-    })();
-</script>
+<noscript><div class="container alert alert-info">Activa JavaScript para previsualizar fotos y elegir filtros antes de guardar.</div></noscript>
+<script th:src="@{/js/subida-documentos.js}" defer></script>
 </body>
 </html>

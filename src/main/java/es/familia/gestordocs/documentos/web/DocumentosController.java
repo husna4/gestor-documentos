@@ -91,7 +91,7 @@ class DocumentosController {
     @GetMapping("/subir")
     String formularioSubida(@RequestParam(required = false) Long seccion,
             @RequestParam(required = false) Long persona, Model model) {
-        model.addAttribute("form", new SubidaForm(seccion == null ? List.of() : List.of(seccion), persona, ""));
+        model.addAttribute("form", new SubidaForm(seccion == null ? List.of() : List.of(seccion), persona, "", true));
         return prepararFormulario(model, SUBIR);
     }
 
@@ -111,6 +111,7 @@ class DocumentosController {
             var resultado = documentoService.subir(form, recibidos);
             redirect.addFlashAttribute("subidos", resultado.subidos().stream().map(DocumentoDto::nombreVisible).toList());
             redirect.addFlashAttribute("rechazados", resultado.errores());
+            redirect.addFlashAttribute("avisos", resultado.avisos());
             return "redirect:/documentos/subir";
         } catch (ReglaNegocioException e) {
             errores.reject("regla", e.getMessage());

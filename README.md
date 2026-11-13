@@ -6,7 +6,7 @@ Aplicación web para organizar documentos por personas y secciones, con acceso d
 
 - Usuarios con roles de administrador y consulta.
 - Gestión de personas, secciones y clasificación de documentos.
-- Subida múltiple y captura de fotos desde el móvil.
+- Subida múltiple y captura de fotos desde el móvil, con previsualización y filtros antes de guardar.
 - Validación del contenido de los archivos, límites de tamaño y miniaturas.
 - Búsqueda sin distinguir tildes, previsualización de imágenes y PDF, y descarga individual o en ZIP.
 - Inicio de sesión, cambio de contraseña y permisos por rol.
@@ -71,6 +71,44 @@ El administrador crea las personas, secciones y usuarios, y sube los documentos.
 
 El botón **Hacer foto** permite capturar una imagen desde el móvil. Las imágenes y los PDF se muestran en el visor; los demás formatos se descargan.
 
+## Escaneo automático de fotos
+
+El formulario permite previsualizar cada foto antes de guardarla. Ofrece documento mejorado,
+escala de grises, blanco y negro y sin filtro (manteniendo recorte y perspectiva). **Foto original**
+conserva el archivo sin cambios. Puedes comparar con el original, ampliar la vista o quitar fotos.
+Cada foto tiene su propia selección; los PDF, GIF y demás documentos mantienen su formato original.
+
+El móvil sube cada foto una sola vez al gestor. Para cada filtro nuevo, el gestor envía el archivo
+original a DocScanner, que detecta los bordes, recorta, corrige la perspectiva y aplica el filtro.
+El gestor conserva temporalmente el resultado para reutilizarlo si vuelves a elegir ese filtro.
+**Guardar documento** guarda exactamente la versión elegida, sin volver a escanear. Si un archivo
+falla, permanece en pantalla para reintentarlo; los guardados se retiran de la lista.
+
+El servicio debe estar iniciado para aplicar filtros. Descarga el código de
+[Doc Scanner](https://github.com/husna4/doc-scanner) y sigue las instrucciones de su README
+para instalarlo y arrancarlo en tu equipo. El navegador solo se conecta al gestor.
+Si no se detectan bordes, se informa y el filtro se aplica a la imagen completa. Si falla el servicio,
+puedes reintentar o elegir **Foto original**.
+
+| Variable | Predeterminado |
+|---|---|
+| `DOCSCANNER_URL` | `http://127.0.0.1:8091/api/scan` |
+| `DOCSCANNER_CONNECT_TIMEOUT` | `3s` |
+| `DOCSCANNER_REQUEST_TIMEOUT` | `30s` por llamada, incluyendo la respuesta completa |
+| `DOCSCANNER_MAX_RESPONSE_SIZE` | `20MB` |
+| `APP_SCAN_TEMP_PATH` | `./datos/temporales/escaneo` |
+| `APP_SCAN_TEMP_TTL` | `30m` sin actividad por borrador |
+| `APP_SCAN_TEMP_MAX_SIZE` | `500MB` para fuentes y variantes de todos los usuarios |
+| `APP_SCAN_TEMP_MAX_PER_USER` | `20` borradores por usuario |
+| `APP_SCAN_TEMP_MAX_TOTAL` | `100` borradores en total |
+
+Solo el administrador que subió la foto puede acceder a su borrador. Se elimina al guardar o
+descartar la foto, o tras 30 minutos de inactividad por defecto.
+
+Los borradores funcionan con una sola instancia del gestor. Un reinicio hace que los borradores
+pendientes dejen de estar disponibles. Los documentos guardados siguen disponibles.
+Usa una carpeta temporal exclusiva, separada de los documentos guardados y fuera de Git.
+
 ## Almacenamiento y copias de seguridad
 
 PostgreSQL guarda los metadatos. Los archivos y las miniaturas se almacenan en disco mediante claves UUID, dentro de `APP_STORAGE_PATH`. Las descargas requieren una sesión autenticada.
@@ -92,9 +130,21 @@ Con PostgreSQL en marcha y `DB_PASSWORD` configurada:
 .\mvnw.cmd test
 ```
 
-Las pruebas utilizan `gestordocs_test` y `target/ficheros-test`. Cubren arquitectura modular, autenticación, permisos, subida y validación de archivos, búsquedas, ZIP, borrados y renderizado de pantallas.
+Las pruebas utilizan `gestordocs_test`, `target/ficheros-test` y `target/borradores-test`. Cubren arquitectura modular, autenticación, permisos, subida y validación de archivos, búsquedas, ZIP, borrados y renderizado de pantallas.
 
 La carpeta `muestras/` contiene archivos para pruebas manuales, incluidos tipos no permitidos. No forma parte del almacenamiento de documentos de la aplicación.
+
+Las pruebas habituales simulan el servicio de escaneo y no necesitan DocScanner en marcha.
+Cubren reutilización de filtros, aislamiento de propietarios, CSRF y roles, cuotas, caducidad,
+JPEG incompletos y limpieza de borradores después de commit, rollback y fallos de borrado.
+Para comprobar también el recorrido con el servicio real, utilizando únicamente una foto sintética y
+la base de datos de tests:
+
+```powershell
+$env:DOCSCANNER_LIVE_TEST = 'true'
+.\mvnw.cmd test
+Remove-Item Env:DOCSCANNER_LIVE_TEST
+```
 
 ## Empaquetado
 

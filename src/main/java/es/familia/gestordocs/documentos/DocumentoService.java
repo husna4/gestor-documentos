@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.data.domain.Limit;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,8 @@ import es.familia.gestordocs.documentos.internal.Documento;
 import es.familia.gestordocs.documentos.internal.DocumentoRepository;
 import es.familia.gestordocs.documentos.internal.DocumentosProperties;
 import es.familia.gestordocs.documentos.internal.GeneradorMiniaturas;
+import es.familia.gestordocs.escaneo.EscaneoService;
+import es.familia.gestordocs.escaneo.EscaneoException;
 import es.familia.gestordocs.personas.PersonaService;
 import es.familia.gestordocs.secciones.SeccionDto;
 import es.familia.gestordocs.secciones.SeccionService;
@@ -60,10 +63,13 @@ public class DocumentoService {
     private final SeccionService seccionService;
     private final UsuarioService usuarioService;
     private final DocumentosProperties propiedades;
+    private final EscaneoService escaneo;
+    private final BorradorEscaneoService borradores;
 
     DocumentoService(DocumentoRepository documentos, StorageService storage, DetectorTipo detectorTipo,
             GeneradorMiniaturas miniaturas, PersonaService personaService, SeccionService seccionService,
-            UsuarioService usuarioService, DocumentosProperties propiedades) {
+            UsuarioService usuarioService, DocumentosProperties propiedades, EscaneoService escaneo,
+            BorradorEscaneoService borradores) {
         this.documentos = documentos;
         this.storage = storage;
         this.detectorTipo = detectorTipo;
@@ -72,6 +78,8 @@ public class DocumentoService {
         this.seccionService = seccionService;
         this.usuarioService = usuarioService;
         this.propiedades = propiedades;
+        this.escaneo = escaneo;
+        this.borradores = borradores;
     }
 
     // ---- Consultas ----
@@ -152,8 +160,19 @@ public class DocumentoService {
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public ResultadoSubida subir(SubidaForm datos, List<FicheroSubido> ficheros) {
-        if (ficheros.isEmpty()) {
+        return subir(datos, ficheros, List.of());
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
+    public ResultadoSubida subir(SubidaForm datos, List<FicheroSubido> ficheros,
+                                 List<SeleccionBorrador> selecciones) {
+        if (ficheros.isEmpty() && selecciones.isEmpty()) {
             throw new ReglaNegocioException("Elige al menos un fichero.");
+        }
+        if (selecciones.size() > 20 || selecciones.stream().map(SeleccionBorrador::id).distinct().count()
+                != selecciones.size()) {
+            throw new ReglaNegocioException("La selección de fotos pendientes no es válida.");
         }
         validarSeccionesYPersona(datos.seccionIds(), datos.personaId());
         var subidoPor = usuarioService.idUsuarioActual()
@@ -161,6 +180,7 @@ public class DocumentoService {
 
         var guardados = new ArrayList<Documento>();
         var errores = new ArrayList<String>();
+        var avisos = new ArrayList<String>();
         for (var fichero : ficheros) {
             var nombre = NombresFichero.limpiar(fichero.nombreOriginal());
             var error = validarFichero(fichero);
@@ -169,7 +189,14 @@ public class DocumentoService {
                 continue;
             }
             try {
-                guardados.add(guardarFichero(fichero, nombre, datos, subidoPor));
+                var preparado = prepararFichero(fichero, nombre, datos.escanearFotos());
+                guardados.add(guardarFichero(preparado.fichero(), preparado.nombre(), preparado.tipo(),
+                        datos, subidoPor));
+                if (preparado.sinBordes()) {
+                    avisos.add(nombre + ": no se detectaron los bordes; se ha guardado la imagen completa.");
+                }
+            } catch (EscaneoException e) {
+                errores.add(nombre + ": " + e.getMessage());
             } catch (TipoNoPermitido e) {
                 errores.add(nombre + ": " + e.getMessage());
             } catch (IOException e) {
@@ -177,7 +204,36 @@ public class DocumentoService {
                 errores.add(nombre + ": no se pudo leer el fichero.");
             }
         }
-        return new ResultadoSubida(aDtos(guardados), errores);
+        for (var seleccion : selecciones) {
+            BorradorEscaneoService.ReservaBorrador reserva = null;
+            boolean sincronizada = false;
+            try {
+                reserva = borradores.reservar(seleccion);
+                var fichero = reserva.fichero();
+                var nombre = NombresFichero.limpiar(fichero.nombreOriginal());
+                var error = validarFichero(fichero);
+                if (error.isPresent()) { throw new ReglaNegocioException(error.get()); }
+                // Ya se ha previsualizado: guardar sus bytes sin volver a escanear.
+                var preparado = prepararFichero(fichero, nombre, false);
+                guardados.add(guardarFichero(preparado.fichero(), preparado.nombre(), preparado.tipo(), datos, subidoPor));
+                var pendiente = reserva;
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCompletion(int estado) {
+                        borradores.terminarReserva(pendiente, estado == STATUS_COMMITTED);
+                    }
+                });
+                sincronizada = true;
+            } catch (es.familia.gestordocs.compartido.NoEncontradoException | ReglaNegocioException
+                    | TipoNoPermitido e) {
+                errores.add("Foto pendiente: " + e.getMessage());
+            } catch (IOException e) {
+                errores.add("Foto pendiente: no se pudo leer el fichero.");
+            } finally {
+                if (reserva != null && !sincronizada) { borradores.terminarReserva(reserva, false); }
+            }
+        }
+        return new ResultadoSubida(aDtos(guardados), errores, avisos);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -216,7 +272,8 @@ public class DocumentoService {
         return Optional.empty();
     }
 
-    private Documento guardarFichero(FicheroSubido fichero, String nombre, SubidaForm datos, Long subidoPor)
+    /** Valida antes de llamar al escáner y antes de crear ningún archivo persistente. */
+    private FicheroPreparado prepararFichero(FicheroSubido fichero, String nombre, boolean escanearFotos)
             throws IOException {
         String tipo;
         try (var entrada = fichero.contenido().getInputStream()) {
@@ -226,6 +283,34 @@ public class DocumentoService {
             throw new TipoNoPermitido(tipo);
         }
 
+        if (!escanearFotos || !TiposFichero.esEscaneable(tipo)) {
+            return new FicheroPreparado(fichero, nombre, tipo, false);
+        }
+        byte[] original;
+        var limite = propiedades.tamanoMaximo().toBytes();
+        try (var entrada = fichero.contenido().getInputStream()) {
+            original = entrada.readNBytes((int) Math.min(limite, Integer.MAX_VALUE - 1L) + 1);
+        }
+        if (original.length > limite) {
+            throw new EscaneoException("La foto supera el tamaño máximo permitido.");
+        }
+        var resultado = escaneo.escanear(original, tipo);
+        var procesado = resultado.contenido();
+        if (procesado.length == 0 || procesado.length > limite) {
+            throw new EscaneoException("La imagen procesada supera el tamaño permitido o está vacía. "
+                    + "Desmarca «Escanear fotos» para guardar el original.");
+        }
+        var base = NombresFichero.sinExtension(nombre);
+        var nombreJpeg = base.substring(0, Math.min(base.length(), 251)) + ".jpg";
+        var foto = new FicheroSubido(nombreJpeg, procesado.length, new ByteArrayResource(procesado));
+        return new FicheroPreparado(foto, nombreJpeg, "image/jpeg", !resultado.documentoDetectado());
+    }
+
+    private record FicheroPreparado(FicheroSubido fichero, String nombre, String tipo, boolean sinBordes) {
+    }
+
+    private Documento guardarFichero(FicheroSubido fichero, String nombre, String tipo,
+                                    SubidaForm datos, Long subidoPor) throws IOException {
         var claveFichero = UUID.randomUUID();
         try (var entrada = fichero.contenido().getInputStream()) {
             guardarEnStorage(CARPETA_FICHEROS + claveFichero, entrada);

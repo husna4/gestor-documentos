@@ -48,3 +48,17 @@ app:
     path: ${APP_STORAGE_PATH:./datos/ficheros}
   documentos:
     tamano-maximo: ${APP_MAX_FILE_SIZE:20MB}
+  # Cliente backend → DocScanner. El móvil no se conecta directamente al escáner.
+  docscanner:
+    url: ${DOCSCANNER_URL:http://127.0.0.1:8091/api/scan}
+    tiempo-conexion: ${DOCSCANNER_CONNECT_TIMEOUT:3s}
+    tiempo-respuesta: ${DOCSCANNER_REQUEST_TIMEOUT:30s}
+    tamano-maximo-respuesta: ${DOCSCANNER_MAX_RESPONSE_SIZE:20MB}
+
+  # Borradores locales de una sola instancia, descartables y ajenos al almacenamiento definitivo.
+  borradores:
+    ruta: ${APP_SCAN_TEMP_PATH:./datos/temporales/escaneo}
+    caducidad: ${APP_SCAN_TEMP_TTL:30m}
+    espacio-maximo: ${APP_SCAN_TEMP_MAX_SIZE:500MB}
+    maximo-por-usuario: ${APP_SCAN_TEMP_MAX_PER_USER:20}
+    maximo-total: ${APP_SCAN_TEMP_MAX_TOTAL:100}
