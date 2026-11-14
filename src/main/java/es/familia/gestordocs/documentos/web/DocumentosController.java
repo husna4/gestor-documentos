@@ -1,7 +1,6 @@
 package es.familia.gestordocs.documentos.web;
 
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.List;
 
 import org.springframework.core.io.Resource;
@@ -80,8 +79,8 @@ class DocumentosController {
         return documentoService.miniatura(id)
                 .map(imagen -> ResponseEntity.ok()
                         .contentType(MediaType.IMAGE_JPEG)
-                        // "private": el navegador puede guardarla, pero ningún proxy intermedio.
-                        .cacheControl(CacheControl.maxAge(Duration.ofDays(30)).cachePrivate())
+                        // Igual que el original: no conservar fotos personales en la caché.
+                        .cacheControl(CacheControl.noStore())
                         .body(imagen))
                 .orElse(ResponseEntity.notFound().build());
     }
