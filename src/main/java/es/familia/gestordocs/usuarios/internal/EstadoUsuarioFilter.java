@@ -41,8 +41,16 @@ class EstadoUsuarioFilter extends OncePerRequestFilter {
     }
 
     @Override
+    protected boolean shouldNotFilterErrorDispatch() { return false; }
+
+    @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
+        if (request.getDispatcherType() == jakarta.servlet.DispatcherType.ERROR
+                && request.getAttribute(IdiomaLocaleResolver.ATRIBUTO) != null) {
+            chain.doFilter(request, response);
+            return;
+        }
         var auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof UsuarioAutenticado autenticado) {
             var usuario = usuarios.findById(autenticado.getId());
@@ -51,6 +59,7 @@ class EstadoUsuarioFilter extends OncePerRequestFilter {
                 response.sendRedirect(request.getContextPath() + "/login?desactivado");
                 return;
             }
+            request.setAttribute(IdiomaLocaleResolver.ATRIBUTO, usuario.get().getIdioma());
             if (usuario.get().isDebeCambiarPassword() && !permitidaSinCambiarPassword(request)) {
                 response.sendRedirect(request.getContextPath() + URL_CAMBIO_PASSWORD);
                 return;
@@ -61,6 +70,8 @@ class EstadoUsuarioFilter extends OncePerRequestFilter {
 
     private static boolean permitidaSinCambiarPassword(HttpServletRequest request) {
         var ruta = request.getRequestURI().substring(request.getContextPath().length());
-        return PERMITIDAS_SIN_CAMBIAR_PASSWORD.stream().anyMatch(ruta::startsWith);
+        return ("/idioma".equals(ruta) && "POST".equals(request.getMethod()))
+                || "/js/interfaz.js".equals(ruta)
+                || PERMITIDAS_SIN_CAMBIAR_PASSWORD.stream().anyMatch(ruta::startsWith);
     }
 }

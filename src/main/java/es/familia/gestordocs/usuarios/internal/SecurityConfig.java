@@ -10,8 +10,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.intercept.AuthorizationFilter;
-import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
 import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices.RememberMeTokenAlgorithm;
+import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
 
 /**
  * Seguridad web: login por formulario, "Recordarme", CSRF (activo por defecto) y reglas por URL.
@@ -28,6 +28,7 @@ class SecurityConfig {
             RecordarmeProperties recordarme, UsuarioRepository usuarios) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/idioma").permitAll()
                         .requestMatchers("/login", "/webjars/**", "/css/**", "/favicon.ico", "/error").permitAll()
                         .requestMatchers("/admin/**", "/documentos/escaneos", "/documentos/escaneos/**").hasRole("ADMIN")
                         .requestMatchers("/documentos/subir", "/documentos/*/editar", "/documentos/*/borrar")

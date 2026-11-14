@@ -1,12 +1,8 @@
 package es.familia.gestordocs.compartido;
 
-/**
- * Error esperado de la lógica de negocio. Su mensaje está pensado para mostrarse
- * tal cual al usuario (por ejemplo, "La contraseña actual no es correcta").
- */
-public class ReglaNegocioException extends RuntimeException {
+public class ReglaNegocioException extends ErrorAplicacion {
+    public ReglaNegocioException(String codigo, Object... argumentos) { super(codigo, argumentos); }
 
-    public ReglaNegocioException(String mensaje) {
-        super(mensaje);
-    }
+    public ReglaNegocioException(Mensaje mensaje) { super(mensaje); }
+    public ReglaNegocioException(String codigo, Throwable causa) { super(codigo, causa); }
 }

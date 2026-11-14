@@ -80,10 +80,10 @@ public class SeccionService {
     }
 
     private Seccion buscarEntidad(Long id) {
-        return secciones.findById(id).orElseThrow(() -> new NoEncontradoException("No existe la sección " + id));
+        return secciones.findById(id).orElseThrow(() -> new NoEncontradoException("secciones.noExiste", id));
     }
 
     private static ReglaNegocioException nombreRepetido() {
-        return new ReglaNegocioException("Ya existe una sección con ese nombre.");
+        return new ReglaNegocioException("secciones.duplicada");
     }
 }

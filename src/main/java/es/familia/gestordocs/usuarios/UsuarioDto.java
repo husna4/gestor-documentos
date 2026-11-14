@@ -7,5 +7,9 @@ public record UsuarioDto(
         Rol rol,
         boolean activo,
         boolean debeCambiarPassword,
-        Long personaId) {
+        Long personaId,
+        Idioma idioma) {
+    public UsuarioDto(Long id, String username, Rol rol, boolean activo, boolean debeCambiarPassword, Long personaId) {
+        this(id, username, rol, activo, debeCambiarPassword, personaId, Idioma.es);
+    }
 }

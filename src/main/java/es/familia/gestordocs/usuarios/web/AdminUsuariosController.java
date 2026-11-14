@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import es.familia.gestordocs.compartido.Mensaje;
 import es.familia.gestordocs.compartido.ReglaNegocioException;
 import es.familia.gestordocs.personas.PersonaService;
 import es.familia.gestordocs.usuarios.EdicionUsuarioForm;
@@ -20,6 +21,7 @@ import es.familia.gestordocs.usuarios.NuevoUsuarioForm;
 import es.familia.gestordocs.usuarios.Rol;
 import es.familia.gestordocs.usuarios.UsuarioDto;
 import es.familia.gestordocs.usuarios.UsuarioService;
+
 import jakarta.validation.Valid;
 
 @Controller
@@ -61,11 +63,10 @@ class AdminUsuariosController {
         }
         try {
             var usuario = usuarioService.crear(form);
-            redirect.addFlashAttribute("mensaje", "Usuario «" + usuario.username()
-                    + "» creado. Tendrá que cambiar la contraseña la primera vez que entre.");
+            redirect.addFlashAttribute("mensaje", Mensaje.de("usuarios.creado", usuario.username()));
             return "redirect:/admin/usuarios";
         } catch (ReglaNegocioException e) {
-            errores.reject("regla", e.getMessage());
+            errores.reject(e.getMensaje().codigo(), e.getMensaje().argumentos().toArray(), null);
             return prepararFormulario(model, NUEVO);
         }
     }
@@ -87,10 +88,10 @@ class AdminUsuariosController {
         }
         try {
             var usuario = usuarioService.actualizar(id, form);
-            redirect.addFlashAttribute("mensaje", "Usuario «" + usuario.username() + "» guardado.");
+            redirect.addFlashAttribute("mensaje", Mensaje.de("usuarios.guardado", usuario.username()));
             return "redirect:/admin/usuarios";
         } catch (ReglaNegocioException e) {
-            errores.reject("regla", e.getMessage());
+            errores.reject(e.getMensaje().codigo(), e.getMensaje().argumentos().toArray(), null);
             return prepararFormulario(model, EDITAR);
         }
     }
@@ -100,9 +101,9 @@ class AdminUsuariosController {
         try {
             usuarioService.resetearPassword(id, temporal);
             redirect.addFlashAttribute("mensaje",
-                    "Contraseña temporal puesta. El usuario tendrá que cambiarla al entrar.");
+                    Mensaje.de("usuarios.password.temporalPuesta"));
         } catch (ReglaNegocioException e) {
-            redirect.addFlashAttribute("error", e.getMessage());
+            redirect.addFlashAttribute("error", e.getMensaje());
         }
         return "redirect:/admin/usuarios/" + id + "/editar";
     }
@@ -111,9 +112,9 @@ class AdminUsuariosController {
     String borrar(@PathVariable Long id, RedirectAttributes redirect) {
         try {
             usuarioService.eliminar(id);
-            redirect.addFlashAttribute("mensaje", "Usuario borrado.");
+            redirect.addFlashAttribute("mensaje", Mensaje.de("usuarios.borrado"));
         } catch (ReglaNegocioException e) {
-            redirect.addFlashAttribute("error", e.getMessage());
+            redirect.addFlashAttribute("error", e.getMensaje());
         }
         return "redirect:/admin/usuarios";
     }

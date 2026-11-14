@@ -165,3 +165,44 @@ El código se organiza por dominio en `es.familia.gestordocs`:
 - `compartido`: excepciones y utilidades comunes.
 
 Las migraciones están en `src/main/resources/db/migration`; las plantillas y estilos, en `src/main/resources/templates` y `static`.
+
+## Idiomas de la interfaz
+
+La interfaz está disponible en **Español** y **English**. Español es el valor inicial de todas
+las cuentas, incluido el administrador de primer arranque y los usuarios anteriores a la
+migración aditiva `V5__idioma_usuario.sql`. Solo se guardan los códigos `es` y `en`.
+
+El selector aparece en la navegación, el login y la pantalla de cambio obligatorio de
+contraseña. El cambio se envía por POST con CSRF. Con sesión iniciada guarda la preferencia
+propia en la cuenta y una cookie de navegador; el administrador también puede elegir el idioma
+al crear o editar otra cuenta. La preferencia de la cuenta prevalece sobre la cookie, incluso
+con «Recordarme», y los cambios administrativos se reflejan en la siguiente petición.
+Sin sesión solo se consulta la cookie validada; sin ella se usa español, independientemente
+del idioma del navegador o del sistema. Tras salir puede mantenerse el último idioma elegido.
+
+En la subida, cambiar de idioma recarga la pantalla. Si hay archivos pendientes, se pide
+confirmación **antes** de enviar el cambio; cancelar conserva la selección. Continuar pierde
+esa selección sin guardarla. Durante la preparación o el guardado se bloquea el cambio.
+Los borradores abandonados se eliminan mediante la caducidad habitual.
+
+Los nombres, descripciones, notas y ficheros de usuarios se mantienen tal como se escribieron.
+También se mantienen los formatos actuales de fechas y números y la configuración de búsqueda.
+
+Para mantener o añadir traducciones:
+
+- `src/main/resources/messages.properties` es el catálogo base completo en español;
+  `messages_en.properties` contiene las mismas claves en inglés. Ambos usan UTF-8.
+- Usar claves semánticas y mensajes completos con argumentos `{0}`, `{1}`, etc. Las
+  validaciones usan los mismos catálogos con sus parámetros propios (`{min}`, `{max}`).
+- Los servicios devuelven `Mensaje` (clave y argumentos), sin depender del idioma HTTP.
+  Thymeleaf y los adaptadores web resuelven el texto al presentarlo. Los contratos JSON
+  conservan `mensaje`, `subidos`, `errores` y `avisos`; estos dos últimos siguen siendo listas de texto.
+- El JavaScript de subida recibe únicamente sus mensajes mediante la serialización segura
+  de Thymeleaf. Los datos dinámicos se muestran con `textContent`.
+- Ejecutar `I18nCatalogosTest` para comprobar equivalencia de claves y parámetros.
+  `IdiomaWebTest`, `I18nMigracionTest` y `PantallasTest` cubren preferencias, seguridad,
+  migración, validaciones, JSON y renderizado en ambos idiomas.
+
+En trabajos simultáneos, `DB_TEST_URL` debe apuntar a una base dedicada y el almacenamiento
+y los borradores deben quedar dentro del worktree de pruebas. Las pruebas normales mantienen
+DocScanner simulado; no se necesita arrancar el servicio real.

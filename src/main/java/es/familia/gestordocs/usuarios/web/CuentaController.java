@@ -9,8 +9,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import es.familia.gestordocs.compartido.Mensaje;
 import es.familia.gestordocs.compartido.ReglaNegocioException;
 import es.familia.gestordocs.usuarios.UsuarioService;
+
 import jakarta.validation.Valid;
 
 /** Cuenta del usuario con sesión iniciada: de momento, solo cambiar la contraseña. */
@@ -36,7 +38,7 @@ class CuentaController {
     String cambiar(@Valid @ModelAttribute("form") CambioPasswordForm form, BindingResult errores,
             Model model, RedirectAttributes redirect) {
         if (!errores.hasFieldErrors("repetida") && !form.repetida().equals(form.nueva())) {
-            errores.rejectValue("repetida", "no-coincide", "Las contraseñas no coinciden");
+            errores.rejectValue("repetida", "usuarios.password.noCoincide");
         }
         if (errores.hasErrors()) {
             return prepararVista(model);
@@ -44,10 +46,10 @@ class CuentaController {
         try {
             usuarioService.cambiarPasswordPropia(form.actual(), form.nueva());
         } catch (ReglaNegocioException e) {
-            errores.reject("regla", e.getMessage());
+            errores.reject(e.getMensaje().codigo(), e.getMensaje().argumentos().toArray(), null);
             return prepararVista(model);
         }
-        redirect.addFlashAttribute("mensaje", "Contraseña cambiada correctamente.");
+        redirect.addFlashAttribute("mensaje", Mensaje.de("usuarios.password.cambiada"));
         return "redirect:/";
     }
 

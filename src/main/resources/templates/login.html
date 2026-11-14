@@ -1,35 +1,37 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragmentos/layout :: head('Entrar')}"></head>
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos/layout :: head(#{comun.entrar})}"></head>
 <body class="bg-body-tertiary">
 <main class="container py-5">
     <div class="row justify-content-center">
         <div class="col-12 col-sm-8 col-md-6 col-lg-4">
-            <h1 class="h3 text-center mb-4"><i class="bi bi-folder2-open text-primary"></i> Documentos de casa</h1>
+            <h1 class="h3 text-center mb-4"><i class="bi bi-folder2-open text-primary"></i> <th:block th:text="#{comun.app}">Documentos de casa</th:block></h1>
 
-            <div th:if="${param.error}" class="alert alert-danger">Usuario o contraseña incorrectos.</div>
-            <div th:if="${param.salir}" class="alert alert-info">Has cerrado la sesión.</div>
+            <div th:if="${param.error}" class="alert alert-danger" th:text="#{login.incorrecto}">Usuario o contraseña incorrectos.</div>
+            <div th:if="${param.salir}" class="alert alert-info" th:text="#{login.sesionCerrada}">Has cerrado la sesión.</div>
             <div th:if="${param.desactivado}" class="alert alert-warning">
-                Tu usuario está desactivado. Habla con quien administra la aplicación.
+                <th:block th:text="#{login.desactivado}">Tu usuario está desactivado. Habla con quien administra la aplicación.</th:block>
             </div>
+
+            <th:block th:replace="~{fragmentos/layout :: idioma}"></th:block>
 
             <!-- th:action añade automáticamente el campo oculto con el token CSRF -->
             <form th:action="@{/login}" method="post" class="card card-body shadow-sm">
                 <div class="mb-3">
-                    <label for="username" class="form-label">Usuario</label>
+                    <label for="username" class="form-label" th:text="#{usuarios.usuario}">Usuario</label>
                     <input type="text" id="username" name="username" class="form-control form-control-lg"
                            autocomplete="username" autocapitalize="none" required autofocus>
                 </div>
                 <div class="mb-3">
-                    <label for="password" class="form-label">Contraseña</label>
+                    <label for="password" class="form-label" th:text="#{cuenta.password}">Contraseña</label>
                     <input type="password" id="password" name="password" class="form-control form-control-lg"
                            autocomplete="current-password" required>
                 </div>
                 <div class="form-check mb-3">
                     <input type="checkbox" id="recordarme" name="recordarme" class="form-check-input">
-                    <label for="recordarme" class="form-check-label">Recordarme en este dispositivo</label>
+                    <label for="recordarme" class="form-check-label" th:text="#{login.recordar}">Recordarme en este dispositivo</label>
                 </div>
-                <button type="submit" class="btn btn-primary btn-lg w-100">Entrar</button>
+                <button type="submit" class="btn btn-primary btn-lg w-100" th:text="#{comun.entrar}">Entrar</button>
             </form>
         </div>
     </div>

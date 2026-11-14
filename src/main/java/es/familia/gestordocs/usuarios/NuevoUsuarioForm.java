@@ -11,15 +11,24 @@ import jakarta.validation.constraints.Size;
  * @param personaId persona de la familia vinculada (opcional)
  */
 public record NuevoUsuarioForm(
-        @NotBlank(message = "El usuario es obligatorio")
+        @NotBlank(message = "{validacion.usuario}")
         @Pattern(regexp = "[A-Za-z0-9._-]{3,50}",
-                message = "Entre 3 y 50 caracteres: letras sin tildes, números, punto, guion o guion bajo")
+                message = "{validacion.username}")
         String username,
-        @NotBlank(message = "La contraseña es obligatoria")
-        @Size(min = UsuarioService.LONGITUD_MINIMA_PASSWORD, max = 100, message = "Debe tener al menos {min} caracteres")
+        @NotBlank(message = "{validacion.password}")
+        @Size(min = UsuarioService.LONGITUD_MINIMA_PASSWORD, max = 100, message = "{validacion.passwordLongitud}")
         String password,
-        @NotNull(message = "Elige un rol") Rol rol,
-        Long personaId) {
+        @NotNull(message = "{validacion.rol}") Rol rol,
+        Long personaId,
+        Idioma idioma) {
+
+    public NuevoUsuarioForm {
+        if (idioma == null) idioma = Idioma.es;
+    }
+
+    public NuevoUsuarioForm(String username, String password, Rol rol, Long personaId) {
+        this(username, password, rol, personaId, Idioma.es);
+    }
 
     public static NuevoUsuarioForm vacio() {
         return new NuevoUsuarioForm("", "", Rol.USER, null);

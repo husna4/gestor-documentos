@@ -34,6 +34,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import es.familia.gestordocs.Muestras;
 import es.familia.gestordocs.SesionDePrueba;
 import es.familia.gestordocs.TestIntegracion;
+import es.familia.gestordocs.compartido.Mensaje;
 import es.familia.gestordocs.escaneo.EscaneoException;
 import es.familia.gestordocs.escaneo.EscaneoService;
 import es.familia.gestordocs.escaneo.ResultadoEscaneo;
@@ -119,28 +120,28 @@ class DocumentoEscaneoTest {
         assertThat(resultado.errores()).isEmpty();
         assertThat(resultado.subidos()).hasSize(1);
         assertThat(resultado.avisos()).containsExactly(
-                "sin-bordes.jpg: no se detectaron los bordes; se ha guardado la imagen completa.");
+                Mensaje.de("documentos.sinBordes", "sin-bordes.jpg"));
         assertThat(documentos.contenido(resultado.subidos().getFirst().id()).recurso().getContentAsByteArray())
                 .isEqualTo(completo);
     }
 
     @Test
     void falloDelEscanerNoGuardaOriginalNiDejaHuerfanos() throws IOException {
-        when(escaneo.escanear(any(), any())).thenThrow(new EscaneoException("El escáner está ocupado."));
+        when(escaneo.escanear(any(), any())).thenThrow(new EscaneoException("escaneo.ocupado"));
         var antes = contarFicheros();
         var resultado = documentos.subir(conEscaneo(), List.of(Muestras.jpeg("no-guardado.jpg")));
         assertThat(resultado.subidos()).isEmpty();
-        assertThat(resultado.errores()).containsExactly("no-guardado.jpg: El escáner está ocupado.");
+        assertThat(resultado.errores()).containsExactly(Mensaje.de("documentos.errorFichero", "no-guardado.jpg", Mensaje.de("escaneo.ocupado")));
         assertThat(contarFicheros()).isEqualTo(antes);
         assertThat(documentos.buscar("no-guardado")).isEmpty();
     }
 
     @Test
     void unFalloDeFotoNoImpideGuardarLosDemasDocumentos() {
-        when(escaneo.escanear(any(), any())).thenThrow(new EscaneoException("Servicio no disponible."));
+        when(escaneo.escanear(any(), any())).thenThrow(new EscaneoException("escaneo.noDisponible"));
         var resultado = documentos.subir(conEscaneo(), List.of(Muestras.jpeg("foto.jpg"), Muestras.pdf("contrato.pdf")));
         assertThat(resultado.subidos()).extracting(DocumentoDto::nombreVisible).containsExactly("contrato");
-        assertThat(resultado.errores()).containsExactly("foto.jpg: Servicio no disponible.");
+        assertThat(resultado.errores()).containsExactly(Mensaje.de("documentos.errorFichero", "foto.jpg", Mensaje.de("escaneo.noDisponible")));
     }
 
     @Test
@@ -158,7 +159,7 @@ class DocumentoEscaneoTest {
         var antes = contarFicheros();
         var resultado = documentos.subir(conEscaneo(), List.of(Muestras.jpeg("crecida.jpg")));
         assertThat(resultado.subidos()).isEmpty();
-        assertThat(resultado.errores().getFirst()).contains("tamaño permitido");
+        assertThat(resultado.errores().getFirst().argumentos().get(1)).isEqualTo(Mensaje.de("escaneo.procesadaGrande"));
         assertThat(contarFicheros()).isEqualTo(antes);
     }
 
@@ -191,7 +192,7 @@ class DocumentoEscaneoTest {
                 .andExpect(flash().attribute("subidos", List.of("camara")))
                 .andExpect(flash().attribute("rechazados", List.of()))
                 .andExpect(flash().attribute("avisos", List.of(
-                        "camara.png: no se detectaron los bordes; se ha guardado la imagen completa.")));
+                        Mensaje.de("documentos.sinBordes", "camara.png"))));
         mvc.perform(get("/documentos/subir").flashAttr("avisos", List.of("Aviso de prueba"))
                         .with(user(admin)))
                 .andExpect(status().isOk()).andExpect(content().string(containsString("Aviso de prueba")));

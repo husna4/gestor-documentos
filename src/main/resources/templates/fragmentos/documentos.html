@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 <body>
 
 <!-- Lista de documentos: miniatura o icono, nombre, persona, secciones y botones de ver/descargar. -->
 <div th:fragment="lista(documentos)">
-    <p th:if="${#lists.isEmpty(documentos)}" class="text-body-secondary fst-italic">No hay documentos.</p>
+    <p th:if="${#lists.isEmpty(documentos)}" class="text-body-secondary fst-italic" th:text="#{comun.sinDocumentos}">No hay documentos.</p>
     <div th:unless="${#lists.isEmpty(documentos)}" class="list-group shadow-sm">
         <div th:each="d : ${documentos}" class="list-group-item d-flex gap-3 align-items-center py-2">
             <a th:href="@{/documentos/{id}(id=${d.id})}" class="flex-shrink-0" aria-hidden="true" tabindex="-1">
@@ -28,9 +28,9 @@
             </div>
             <div class="d-flex gap-1 flex-shrink-0">
                 <a th:if="${d.previsualizable()}" th:href="@{/documentos/{id}/ver(id=${d.id})}" target="_blank"
-                   class="btn btn-outline-secondary btn-sm" title="Ver" aria-label="Ver"><i class="bi bi-eye"></i></a>
+                   class="btn btn-outline-secondary btn-sm" th:title="#{comun.ver}" th:aria-label="#{comun.ver}"><i class="bi bi-eye"></i></a>
                 <a th:href="@{/documentos/{id}/descargar(id=${d.id})}" class="btn btn-outline-primary btn-sm"
-                   title="Descargar" aria-label="Descargar"><i class="bi bi-download"></i></a>
+                   th:title="#{comun.descargar}" th:aria-label="#{comun.descargar}"><i class="bi bi-download"></i></a>
             </div>
         </div>
     </div>
@@ -39,9 +39,9 @@
 <!-- Casillas de secciones y desplegable de persona, comunes a subir y editar. -->
 <th:block th:fragment="campos-clasificacion">
     <fieldset class="mb-3">
-        <legend class="form-label fs-6">Secciones</legend>
+        <legend class="form-label fs-6" th:text="#{secciones.titulo}">Secciones</legend>
         <p th:if="${#lists.isEmpty(secciones)}" class="small text-body-secondary">
-            Aún no hay secciones. <a th:href="@{/admin/secciones/nueva}">Crear una</a>.
+            <th:block th:text="#{secciones.aunVacias}">Aún no hay secciones.</th:block> <a th:href="@{/admin/secciones/nueva}" th:text="#{secciones.crear}">Crear una</a>.
         </p>
         <!--
           Casillas escritas a mano y no con th:field: th:field añade un <input hidden> detrás de cada una,
@@ -55,12 +55,12 @@
                 <label class="btn btn-outline-primary" th:for="|seccion-${s.id}|" th:text="${s.nombre}">Sección</label>
             </th:block>
         </div>
-        <div class="form-text">Puedes marcar varias. Sin ninguna, el documento irá a «Sin clasificar».</div>
+        <div class="form-text" th:text="#{secciones.ayuda}">Puedes marcar varias. Sin ninguna, el documento irá a «Sin clasificar».</div>
     </fieldset>
     <div class="mb-3">
-        <label for="personaId" class="form-label">Persona</label>
+        <label for="personaId" class="form-label" th:text="#{personas.persona}">Persona</label>
         <select th:field="*{personaId}" class="form-select">
-            <option value="">— De nadie en concreto —</option>
+            <option value="" th:text="#{personas.ninguna}">— De nadie en concreto —</option>
             <option th:each="p : ${personas}" th:value="${p.id}" th:text="${p.nombreCompleto()}">Persona</option>
         </select>
     </div>

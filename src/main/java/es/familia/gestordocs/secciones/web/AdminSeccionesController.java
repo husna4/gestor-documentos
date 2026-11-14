@@ -10,9 +10,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import es.familia.gestordocs.compartido.Mensaje;
 import es.familia.gestordocs.compartido.ReglaNegocioException;
 import es.familia.gestordocs.secciones.SeccionForm;
 import es.familia.gestordocs.secciones.SeccionService;
+
 import jakarta.validation.Valid;
 
 /** Alta y edición de secciones. El borrado (que avisa de los documentos afectados) está en el módulo portal. */
@@ -48,10 +50,10 @@ class AdminSeccionesController {
         }
         try {
             var seccion = seccionService.crear(form);
-            redirect.addFlashAttribute("mensaje", "Sección «" + seccion.nombre() + "» creada.");
+            redirect.addFlashAttribute("mensaje", Mensaje.de("secciones.creada", seccion.nombre()));
             return "redirect:/admin/secciones";
         } catch (ReglaNegocioException e) {
-            errores.rejectValue("nombre", "repetido", e.getMessage());
+            errores.rejectValue("nombre", e.getMensaje().codigo(), e.getMensaje().argumentos().toArray(), null);
             return FORMULARIO;
         }
     }
@@ -72,10 +74,10 @@ class AdminSeccionesController {
         }
         try {
             var seccion = seccionService.actualizar(id, form);
-            redirect.addFlashAttribute("mensaje", "Sección «" + seccion.nombre() + "» guardada.");
+            redirect.addFlashAttribute("mensaje", Mensaje.de("secciones.guardada", seccion.nombre()));
             return "redirect:/admin/secciones";
         } catch (ReglaNegocioException e) {
-            errores.rejectValue("nombre", "repetido", e.getMessage());
+            errores.rejectValue("nombre", e.getMensaje().codigo(), e.getMensaje().argumentos().toArray(), null);
             return FORMULARIO;
         }
     }

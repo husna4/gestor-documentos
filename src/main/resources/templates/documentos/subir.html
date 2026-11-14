@@ -1,89 +1,124 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragmentos/layout :: head('Subir documentos')}"></head>
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos/layout :: head(#{documentos.subirTitulo})}"></head>
 <body>
 <nav th:replace="~{fragmentos/layout :: navbar}"></nav>
 <main class="container pb-5">
     <div class="row justify-content-center">
         <div class="col-12 col-lg-8">
-            <h1 class="h3 mb-3">Subir documentos</h1>
+            <h1 class="h3 mb-3" th:text="#{documentos.subirTitulo}">Subir documentos</h1>
 
             <div th:if="${subidos != null and !#lists.isEmpty(subidos)}" class="alert alert-success">
-                <strong th:text="${#lists.size(subidos) == 1 ? 'Subido 1 documento:' : 'Subidos ' + #lists.size(subidos) + ' documentos:'}">Subidos:</strong>
+                <strong th:text="#{documentos.subidos(${#lists.size(subidos)})}">Subidos:</strong>
                 <ul class="mb-0"><li th:each="n : ${subidos}" th:text="${n}">nombre</li></ul>
             </div>
             <div th:if="${rechazados != null and !#lists.isEmpty(rechazados)}" class="alert alert-danger">
-                <strong>No se han subido:</strong>
-                <ul class="mb-0"><li th:each="e : ${rechazados}" th:text="${e}">error</li></ul>
+                <strong th:text="#{documentos.rechazados}">No se han subido:</strong>
+                <ul class="mb-0"><li th:each="e : ${rechazados}" th:text="${@mensajes.texto(e)}">error</li></ul>
             </div>
 
             <div th:if="${avisos != null and !#lists.isEmpty(avisos)}" class="alert alert-warning" role="status">
-                <ul class="mb-0"><li th:each="aviso : ${avisos}" th:text="${aviso}">Aviso del escaneo</li></ul>
+                <ul class="mb-0"><li th:each="aviso : ${avisos}" th:text="${@mensajes.texto(aviso)}">Aviso del escaneo</li></ul>
             </div>
 
             <form th:action="@{/documentos/subir}" th:object="${form}" method="post"
                   enctype="multipart/form-data" class="card card-body shadow-sm"
                   th:attr="data-tamano-maximo=${tamanoMaximoBytes},data-escaneos-url=@{/documentos/escaneos}">
                 <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger">
-                    <p th:each="error : ${#fields.globalErrors()}" th:text="${error}" class="mb-0">Error</p>
+                    <p th:each="error : ${#fields.globalErrors()}" th:text="${@mensajes.texto(error)}" class="mb-0">Error</p>
                 </div>
 
                 <div class="mb-3">
-                    <span class="form-label d-block">Ficheros</span>
+                    <span class="form-label d-block" th:text="#{documentos.ficheros}">Ficheros</span>
                     <div class="d-flex flex-wrap gap-2">
                         <!-- En el móvil, "capture" abre directamente la cámara trasera. -->
                         <label class="btn btn-lg btn-outline-primary">
-                            <i class="bi bi-camera"></i> Hacer foto
+                            <i class="bi bi-camera"></i> <th:block th:text="#{documentos.foto}">Hacer foto</th:block>
                             <input type="file" name="ficheros" accept="image/*" capture="environment"
                                    class="d-none" data-selector-ficheros>
                         </label>
                         <label class="btn btn-lg btn-outline-primary">
-                            <i class="bi bi-folder2-open"></i> Elegir ficheros
+                            <i class="bi bi-folder2-open"></i> <th:block th:text="#{documentos.elegir}">Elegir ficheros</th:block>
                             <input type="file" name="ficheros" multiple th:accept="${tiposAceptados}"
                                    class="d-none" data-selector-ficheros>
                         </label>
                     </div>
                     <ul id="elegidos" class="list-unstyled small mt-2 mb-0 text-body-secondary"></ul>
                     <div id="demasiado-grandes" class="alert alert-danger small mt-2 mb-0 d-none"></div>
-                    <div class="form-text">Imágenes, PDF y documentos de Office/LibreOffice.
-                        Máximo <span th:text="${tamanoMaximo}">20 MB</span> por fichero.</div>
+                    <div class="form-text" th:text="#{documentos.tipos(${tamanoMaximo})}"></div>
                 </div>
 
                 <div class="mb-3">
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" id="escanearFotos" th:field="*{escanearFotos}"
                                aria-describedby="ayuda-escaneo">
-                        <label class="form-check-label" for="escanearFotos">Escanear fotos antes de guardar</label>
+                        <label class="form-check-label" for="escanearFotos" th:text="#{escaneo.activar}">Escanear fotos antes de guardar</label>
                     </div>
                     <div class="form-text" id="ayuda-escaneo">
-                        Previsualiza fotos JPEG, PNG, WebP y HEIC/HEIF antes de guardarlas y elige el filtro de cada una.
-                        «Sin filtro» mantiene el recorte; «Foto original» conserva el archivo sin cambios.
-                        Desactívalo para seleccionar el original en todas las fotos pendientes.
-                        Los demás archivos se guardan tal como los subes.
+                        <th:block th:text="#{escaneo.ayuda}">Previsualiza fotos JPEG, PNG, WebP y HEIC/HEIF antes de guardarlas y elige el filtro de cada una. «Sin filtro» mantiene el recorte; «Foto original» conserva el archivo sin cambios. Desactívalo para seleccionar el original en todas las fotos pendientes. Los demás archivos se guardan tal como los subes.</th:block>
                     </div>
                 </div>
 
                 <div id="resultado-subida" class="d-none" role="status" aria-live="polite"></div>
-                <div id="previsualizaciones" class="d-grid gap-3 mb-3" aria-label="Fotos y archivos pendientes"></div>
-                <button type="button" id="descartar-todos" class="btn btn-outline-secondary mb-3 d-none">Descartar pendientes</button>
+                <div id="previsualizaciones" class="d-grid gap-3 mb-3" th:aria-label="#{escaneo.pendientes}"></div>
+                <button type="button" id="descartar-todos" class="btn btn-outline-secondary mb-3 d-none" th:text="#{escaneo.descartar}">Descartar pendientes</button>
 
                 <th:block th:replace="~{fragmentos/documentos :: campos-clasificacion}"></th:block>
 
                 <div class="mb-3">
-                    <label for="descripcion" class="form-label">Descripción <span class="text-body-secondary">(opcional)</span></label>
+                    <label for="descripcion" class="form-label"><th:block th:text="#{comun.descripcion}">Descripción</th:block> <span class="text-body-secondary" th:text="#{comun.opcional}">(opcional)</span></label>
                     <textarea th:field="*{descripcion}" class="form-control" rows="2" th:errorclass="is-invalid"></textarea>
                     <div class="invalid-feedback" th:errors="*{descripcion}">Error</div>
                 </div>
 
                 <button type="submit" class="btn btn-primary btn-lg w-100" id="boton-subir" disabled>
-                    <i class="bi bi-cloud-upload"></i> Subir
+                    <i class="bi bi-cloud-upload"></i> <th:block th:text="#{documentos.subir}">Subir</th:block>
                 </button>
             </form>
         </div>
     </div>
 </main>
 <th:block th:replace="~{fragmentos/layout :: scripts}"></th:block>
-<noscript><div class="container alert alert-info">Activa JavaScript para previsualizar fotos y elegir filtros antes de guardar.</div></noscript>
+<noscript><div class="container alert alert-info" th:text="#{escaneo.javascript}">Activa JavaScript para previsualizar fotos y elegir filtros antes de guardar.</div></noscript>
+<script th:inline="javascript">
+    window.mensajesSubida = {
+        mejorado: /*[[#{subida.js.mejorado}]]*/ "",
+        sinFiltro: /*[[#{subida.js.sinFiltro}]]*/ "",
+        grises: /*[[#{subida.js.grises}]]*/ "",
+        blancoNegro: /*[[#{subida.js.blancoNegro}]]*/ "",
+        original: /*[[#{subida.js.original}]]*/ "",
+        guardando: /*[[#{subida.js.guardando}]]*/ "",
+        preparando: /*[[#{subida.js.preparando}]]*/ "",
+        guardarVarios: /*[[#{subida.js.guardarVarios}]]*/ "",
+        guardarUno: /*[[#{subida.js.guardarUno}]]*/ "",
+        sesion: /*[[#{subida.js.sesion}]]*/ "",
+        grande: /*[[#{subida.js.grande}]]*/ "",
+        error: /*[[#{subida.js.error}]]*/ "",
+        previsualizando: /*[[#{subida.js.previsualizando}]]*/ "",
+        verOriginal: /*[[#{subida.js.verOriginal}]]*/ "",
+        sinBordes: /*[[#{subida.js.sinBordes}]]*/ "",
+        guardarOriginal: /*[[#{subida.js.guardarOriginal}]]*/ "",
+        guardarVersion: /*[[#{subida.js.guardarVersion}]]*/ "",
+        errorFiltro: /*[[#{subida.js.errorFiltro}]]*/ "",
+        caducado: /*[[#{subida.js.caducado}]]*/ "",
+        subiendo: /*[[#{subida.js.subiendo}]]*/ "",
+        errorDescartar: /*[[#{subida.js.errorDescartar}]]*/ "",
+        quitar: /*[[#{subida.js.quitar}]]*/ "",
+        vacioGrande: /*[[#{subida.js.vacioGrande}]]*/ "",
+        previsualizacion: /*[[#{subida.js.previsualizacion}]]*/ "",
+        noVisible: /*[[#{subida.js.noVisible}]]*/ "",
+        acabado: /*[[#{subida.js.acabado}]]*/ "",
+        volverVersion: /*[[#{subida.js.volverVersion}]]*/ "",
+        ampliar: /*[[#{subida.js.ampliar}]]*/ "",
+        reintentar: /*[[#{subida.js.reintentar}]]*/ "",
+        sinCambios: /*[[#{subida.js.sinCambios}]]*/ "",
+        guardandoVersion: /*[[#{subida.js.guardandoVersion}]]*/ "",
+        errorGuardar: /*[[#{subida.js.errorGuardar}]]*/ "",
+        guardado: /*[[#{subida.js.guardado}]]*/ "",
+        errorArchivo: /*[[#{subida.js.errorArchivo}]]*/ "",
+        cambiarIdioma: /*[[#{subida.js.cambiarIdioma}]]*/ ""
+    };
+</script>
 <script th:src="@{/js/subida-documentos.js}" defer></script>
 </body>
 </html>

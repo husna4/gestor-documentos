@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org"
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head th:replace="~{fragmentos/layout :: head('Inicio')}"></head>
+<head th:replace="~{fragmentos/layout :: head(#{comun.inicio})}"></head>
 <body>
 <nav th:replace="~{fragmentos/layout :: navbar}"></nav>
 <main class="container pb-5">
     <th:block th:replace="~{fragmentos/layout :: mensajes}"></th:block>
 
-    <h1 class="h4 mb-3"><i class="bi bi-collection"></i> Secciones</h1>
+    <h1 class="h4 mb-3"><i class="bi bi-collection"></i> <th:block th:text="#{secciones.titulo}">Secciones</th:block></h1>
     <div class="row g-3 mb-4">
         <div th:each="s : ${secciones}" class="col-6 col-md-4 col-lg-3">
             <a th:href="@{/secciones/{id}(id=${s.id})}" class="card tarjeta-acceso h-100 text-decoration-none">
@@ -15,26 +15,26 @@
                     <span class="fw-semibold fs-5" th:text="${s.nombre}">Sección</span>
                     <span class="small text-body-secondary"
                           th:with="n=${documentosPorSeccion.getOrDefault(s.id, 0L)}"
-                          th:text="${n == 1 ? '1 documento' : n + ' documentos'}">0 documentos</span>
+                          th:text="#{comun.documentos(${n})}">0 documentos</span>
                 </div>
             </a>
         </div>
         <div th:if="${sinClasificar > 0}" class="col-6 col-md-4 col-lg-3">
             <a th:href="@{/sin-clasificar}" class="card tarjeta-acceso h-100 text-decoration-none border-warning">
                 <div class="card-body d-flex flex-column justify-content-center">
-                    <span class="fw-semibold fs-5">Sin clasificar</span>
+                    <span class="fw-semibold fs-5" th:text="#{comun.sinClasificar}">Sin clasificar</span>
                     <span class="small text-body-secondary"
-                          th:text="${sinClasificar == 1 ? '1 documento' : sinClasificar + ' documentos'}">0</span>
+                          th:text="#{comun.documentos(${sinClasificar})}">0</span>
                 </div>
             </a>
         </div>
         <div th:if="${#lists.isEmpty(secciones)}" class="col-12 text-body-secondary">
-            Todavía no hay secciones.
-            <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/secciones/nueva}">Crea la primera</a>.
+            <th:block th:text="#{secciones.vacias}">Todavía no hay secciones.</th:block>
+            <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/secciones/nueva}" th:text="#{inicio.crearSeccion}">Crea la primera</a>.
         </div>
     </div>
 
-    <h2 class="h4 mb-3"><i class="bi bi-people"></i> Personas</h2>
+    <h2 class="h4 mb-3"><i class="bi bi-people"></i> <th:block th:text="#{personas.titulo}">Personas</th:block></h2>
     <div class="row g-3 mb-4">
         <div th:each="p : ${personas}" class="col-6 col-md-4 col-lg-3">
             <a th:href="@{/personas/{id}(id=${p.id})}" class="card tarjeta-acceso h-100 text-decoration-none">
@@ -45,15 +45,15 @@
             </a>
         </div>
         <div th:if="${#lists.isEmpty(personas)}" class="col-12 text-body-secondary">
-            Todavía no hay personas.
-            <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/personas/nueva}">Añade la primera</a>.
+            <th:block th:text="#{personas.vacias}">Todavía no hay personas.</th:block>
+            <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/personas/nueva}" th:text="#{inicio.crearPersona}">Añade la primera</a>.
         </div>
     </div>
 
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="h4 mb-0"><i class="bi bi-clock-history"></i> Subidos recientemente</h2>
+        <h2 class="h4 mb-0"><i class="bi bi-clock-history"></i> <th:block th:text="#{inicio.recientes}">Subidos recientemente</th:block></h2>
         <a sec:authorize="hasRole('ADMIN')" th:href="@{/documentos/subir}" class="btn btn-primary">
-            <i class="bi bi-cloud-upload"></i> Subir
+            <i class="bi bi-cloud-upload"></i> <th:block th:text="#{documentos.subir}">Subir</th:block>
         </a>
     </div>
     <div th:replace="~{fragmentos/documentos :: lista(${recientes})}"></div>

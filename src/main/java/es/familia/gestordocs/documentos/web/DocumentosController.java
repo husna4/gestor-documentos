@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import es.familia.gestordocs.compartido.Mensaje;
 import es.familia.gestordocs.compartido.ReglaNegocioException;
 import es.familia.gestordocs.documentos.ContenidoDocumento;
 import es.familia.gestordocs.documentos.DocumentoDto;
@@ -33,6 +34,7 @@ import es.familia.gestordocs.documentos.SubidaForm;
 import es.familia.gestordocs.documentos.TiposFichero;
 import es.familia.gestordocs.personas.PersonaService;
 import es.familia.gestordocs.secciones.SeccionService;
+
 import jakarta.validation.Valid;
 
 /**
@@ -114,7 +116,7 @@ class DocumentosController {
             redirect.addFlashAttribute("avisos", resultado.avisos());
             return "redirect:/documentos/subir";
         } catch (ReglaNegocioException e) {
-            errores.reject("regla", e.getMessage());
+            errores.reject(e.getMensaje().codigo(), e.getMensaje().argumentos().toArray(), null);
             return prepararFormulario(model, SUBIR);
         }
     }
@@ -135,10 +137,10 @@ class DocumentosController {
         if (!errores.hasErrors()) {
             try {
                 documentoService.editar(id, form);
-                redirect.addFlashAttribute("mensaje", "Documento guardado.");
+                redirect.addFlashAttribute("mensaje", Mensaje.de("documentos.guardado"));
                 return "redirect:/documentos/" + id;
             } catch (ReglaNegocioException e) {
-                errores.reject("regla", e.getMessage());
+                errores.reject(e.getMensaje().codigo(), e.getMensaje().argumentos().toArray(), null);
             }
         }
         model.addAttribute("documento", documentoService.obtener(id));
@@ -149,7 +151,7 @@ class DocumentosController {
     String borrar(@PathVariable Long id, RedirectAttributes redirect) {
         var documento = documentoService.obtener(id);
         documentoService.eliminar(id);
-        redirect.addFlashAttribute("mensaje", "Documento «" + documento.nombreVisible() + "» borrado.");
+        redirect.addFlashAttribute("mensaje", Mensaje.de("documentos.borrado", documento.nombreVisible()));
         return "redirect:/";
     }
 

@@ -11,6 +11,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
+import es.familia.gestordocs.compartido.Mensaje;
 import es.familia.gestordocs.documentos.DocumentoDto;
 import es.familia.gestordocs.documentos.DocumentoService;
 import es.familia.gestordocs.personas.PersonaService;
@@ -19,7 +20,8 @@ import es.familia.gestordocs.personas.PersonaService;
 @Controller
 class FichaPersonaController {
 
-    static final String SIN_CLASIFICAR = "Sin clasificar";
+    static final Mensaje SIN_CLASIFICAR =
+            Mensaje.de("comun.sinClasificar");
 
     private final PersonaService personaService;
     private final DocumentoService documentoService;
@@ -42,7 +44,7 @@ class FichaPersonaController {
      * Nombre de sección → documentos, por orden alfabético y con "Sin clasificar" al final.
      * Un documento que está en dos secciones aparece en los dos grupos.
      */
-    static Map<String, List<DocumentoDto>> agruparPorSeccion(List<DocumentoDto> documentos) {
+    static Map<Object, List<DocumentoDto>> agruparPorSeccion(List<DocumentoDto> documentos) {
         var porSeccion = new TreeMap<String, List<DocumentoDto>>(String.CASE_INSENSITIVE_ORDER);
         var sinSeccion = new ArrayList<DocumentoDto>();
         for (var documento : documentos) {
@@ -51,7 +53,7 @@ class FichaPersonaController {
             }
             documento.secciones().forEach(s -> porSeccion.computeIfAbsent(s.nombre(), n -> new ArrayList<>()).add(documento));
         }
-        var grupos = new LinkedHashMap<String, List<DocumentoDto>>(porSeccion);
+        var grupos = new LinkedHashMap<Object, List<DocumentoDto>>(porSeccion);
         if (!sinSeccion.isEmpty()) {
             grupos.put(SIN_CLASIFICAR, sinSeccion);
         }

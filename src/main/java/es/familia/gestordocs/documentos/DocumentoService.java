@@ -16,8 +16,8 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.core.io.Resource;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Limit;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -26,6 +26,8 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import es.familia.gestordocs.almacenamiento.StorageService;
+import es.familia.gestordocs.compartido.ErrorAplicacion;
+import es.familia.gestordocs.compartido.Mensaje;
 import es.familia.gestordocs.compartido.NoEncontradoException;
 import es.familia.gestordocs.compartido.ReglaNegocioException;
 import es.familia.gestordocs.documentos.internal.DetectorTipo;
@@ -33,8 +35,8 @@ import es.familia.gestordocs.documentos.internal.Documento;
 import es.familia.gestordocs.documentos.internal.DocumentoRepository;
 import es.familia.gestordocs.documentos.internal.DocumentosProperties;
 import es.familia.gestordocs.documentos.internal.GeneradorMiniaturas;
-import es.familia.gestordocs.escaneo.EscaneoService;
 import es.familia.gestordocs.escaneo.EscaneoException;
+import es.familia.gestordocs.escaneo.EscaneoService;
 import es.familia.gestordocs.personas.PersonaService;
 import es.familia.gestordocs.secciones.SeccionDto;
 import es.familia.gestordocs.secciones.SeccionService;
@@ -168,24 +170,24 @@ public class DocumentoService {
     public ResultadoSubida subir(SubidaForm datos, List<FicheroSubido> ficheros,
                                  List<SeleccionBorrador> selecciones) {
         if (ficheros.isEmpty() && selecciones.isEmpty()) {
-            throw new ReglaNegocioException("Elige al menos un fichero.");
+            throw new ReglaNegocioException("documentos.elegirFichero");
         }
         if (selecciones.size() > 20 || selecciones.stream().map(SeleccionBorrador::id).distinct().count()
                 != selecciones.size()) {
-            throw new ReglaNegocioException("La selección de fotos pendientes no es válida.");
+            throw new ReglaNegocioException("escaneo.seleccionInvalida");
         }
         validarSeccionesYPersona(datos.seccionIds(), datos.personaId());
         var subidoPor = usuarioService.idUsuarioActual()
                 .orElseThrow(() -> new IllegalStateException("No hay un usuario con sesión iniciada"));
 
         var guardados = new ArrayList<Documento>();
-        var errores = new ArrayList<String>();
-        var avisos = new ArrayList<String>();
+        var errores = new ArrayList<Mensaje>();
+        var avisos = new ArrayList<Mensaje>();
         for (var fichero : ficheros) {
             var nombre = NombresFichero.limpiar(fichero.nombreOriginal());
             var error = validarFichero(fichero);
             if (error.isPresent()) {
-                errores.add(nombre + ": " + error.get());
+                errores.add(Mensaje.de("documentos.errorFichero", nombre, error.get()));
                 continue;
             }
             try {
@@ -193,15 +195,16 @@ public class DocumentoService {
                 guardados.add(guardarFichero(preparado.fichero(), preparado.nombre(), preparado.tipo(),
                         datos, subidoPor));
                 if (preparado.sinBordes()) {
-                    avisos.add(nombre + ": no se detectaron los bordes; se ha guardado la imagen completa.");
+                    avisos.add(Mensaje.de("documentos.sinBordes", nombre));
                 }
             } catch (EscaneoException e) {
-                errores.add(nombre + ": " + e.getMessage());
+                log.warn("No se pudo escanear el fichero {}", nombre, e);
+                errores.add(Mensaje.de("documentos.errorFichero", nombre, e.getMensaje()));
             } catch (TipoNoPermitido e) {
-                errores.add(nombre + ": " + e.getMessage());
+                errores.add(Mensaje.de("documentos.errorFichero", nombre, e.getMensaje()));
             } catch (IOException e) {
                 log.error("Error leyendo el fichero subido {}", nombre, e);
-                errores.add(nombre + ": no se pudo leer el fichero.");
+                errores.add(Mensaje.de("documentos.errorFichero", nombre, Mensaje.de("documentos.lectura")));
             }
         }
         for (var seleccion : selecciones) {
@@ -226,9 +229,9 @@ public class DocumentoService {
                 sincronizada = true;
             } catch (es.familia.gestordocs.compartido.NoEncontradoException | ReglaNegocioException
                     | TipoNoPermitido e) {
-                errores.add("Foto pendiente: " + e.getMessage());
+                errores.add(Mensaje.de("documentos.errorPendiente", e.getMensaje()));
             } catch (IOException e) {
-                errores.add("Foto pendiente: no se pudo leer el fichero.");
+                errores.add(Mensaje.de("documentos.errorPendiente", Mensaje.de("documentos.lectura")));
             } finally {
                 if (reserva != null && !sincronizada) { borradores.terminarReserva(reserva, false); }
             }
@@ -262,12 +265,12 @@ public class DocumentoService {
     // ---- Auxiliares ----
 
     /** Vacío si el fichero es válido; si no, el motivo del rechazo. */
-    private Optional<String> validarFichero(FicheroSubido fichero) {
+    private Optional<Mensaje> validarFichero(FicheroSubido fichero) {
         if (fichero.tamano() == 0) {
-            return Optional.of("el fichero está vacío.");
+            return Optional.of(Mensaje.de("documentos.vacio"));
         }
         if (fichero.tamano() > propiedades.tamanoMaximo().toBytes()) {
-            return Optional.of("supera el tamaño máximo de " + tamanoMaximoLegible() + ".");
+            return Optional.of(Mensaje.de("documentos.grande", tamanoMaximoLegible()));
         }
         return Optional.empty();
     }
@@ -292,13 +295,12 @@ public class DocumentoService {
             original = entrada.readNBytes((int) Math.min(limite, Integer.MAX_VALUE - 1L) + 1);
         }
         if (original.length > limite) {
-            throw new EscaneoException("La foto supera el tamaño máximo permitido.");
+            throw new EscaneoException("escaneo.fotoGrande");
         }
         var resultado = escaneo.escanear(original, tipo);
         var procesado = resultado.contenido();
         if (procesado.length == 0 || procesado.length > limite) {
-            throw new EscaneoException("La imagen procesada supera el tamaño permitido o está vacía. "
-                    + "Desmarca «Escanear fotos» para guardar el original.");
+            throw new EscaneoException("escaneo.procesadaGrande");
         }
         var base = NombresFichero.sinExtension(nombre);
         var nombreJpeg = base.substring(0, Math.min(base.length(), 251)) + ".jpg";
@@ -364,15 +366,15 @@ public class DocumentoService {
 
     private void validarSeccionesYPersona(Collection<Long> seccionIds, Long personaId) {
         if (!seccionService.existenTodas(seccionIds)) {
-            throw new ReglaNegocioException("Alguna de las secciones elegidas no existe.");
+            throw new ReglaNegocioException("secciones.elegidaNoExiste");
         }
         if (personaId != null && !personaService.existe(personaId)) {
-            throw new ReglaNegocioException("La persona elegida no existe.");
+            throw new ReglaNegocioException("personas.elegidaNoExiste");
         }
     }
 
     private Documento buscarEntidad(Long id) {
-        return documentos.findById(id).orElseThrow(() -> new NoEncontradoException("No existe el documento " + id));
+        return documentos.findById(id).orElseThrow(() -> new NoEncontradoException("documentos.noExiste", id));
     }
 
     public long tamanoMaximoBytes() {
@@ -418,16 +420,16 @@ public class DocumentoService {
                         .filter(Objects::nonNull)
                         .sorted(Comparator.comparing(SeccionDto::nombre, String.CASE_INSENSITIVE_ORDER))
                         .toList(),
-                usuarios.getOrDefault(d.getSubidoPorId(), "(usuario borrado)"),
+                usuarios.getOrDefault(d.getSubidoPorId(), ""),
                 d.getSubidoEn(),
                 d.getClaveMiniatura() != null))
                 .toList();
     }
 
     /** Tipo de fichero fuera de la lista blanca. */
-    private static final class TipoNoPermitido extends RuntimeException {
+    private static final class TipoNoPermitido extends ErrorAplicacion {
         TipoNoPermitido(String tipo) {
-            super("tipo de fichero no permitido (" + tipo + ").");
+            super("documentos.tipo", tipo);
         }
     }
 }

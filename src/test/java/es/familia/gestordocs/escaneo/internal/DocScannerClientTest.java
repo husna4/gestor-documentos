@@ -100,7 +100,7 @@ class DocScannerClientTest {
                 "application/json", "", false));
         assertThatThrownBy(() -> cliente().escanear(jpeg, "image/jpeg"))
                 .isInstanceOf(EscaneoException.class)
-                .hasMessageContaining("Escanear fotos")
+                .hasMessageStartingWith("escaneo.")
                 .hasMessageNotContaining("detalle-privado");
     }
 
@@ -125,14 +125,14 @@ class DocScannerClientTest {
     void limitaRespuestasConLongitudYChunked(boolean chunked) {
         respuesta.set(e -> enviar(e, 200, new byte[4096], "image/jpeg", "detected", chunked));
         assertThatThrownBy(() -> cliente(256, Duration.ofSeconds(3)).escanear(jpeg, "image/jpeg"))
-                .isInstanceOf(EscaneoException.class).hasMessageContaining("tamaño máximo");
+                .isInstanceOf(EscaneoException.class).hasMessage("escaneo.respuestaGrande");
     }
 
     @Test
     void rechazaUnMimeIncorrecto() {
         respuesta.set(e -> enviar(e, 200, jpeg, "text/html", "detected", false));
         assertThatThrownBy(() -> cliente().escanear(jpeg, "image/jpeg"))
-                .isInstanceOf(EscaneoException.class).hasMessageContaining("respuesta no válida");
+                .isInstanceOf(EscaneoException.class).hasMessage("escaneo.respuestaInvalida");
     }
 
     @Test
@@ -140,14 +140,14 @@ class DocScannerClientTest {
         respuesta.set(e -> enviar(e, 200, "esto-no-es-jpeg".getBytes(StandardCharsets.UTF_8),
                 "image/jpeg", "detected", false));
         assertThatThrownBy(() -> cliente().escanear(jpeg, "image/jpeg"))
-                .isInstanceOf(EscaneoException.class).hasMessageContaining("imagen no válida");
+                .isInstanceOf(EscaneoException.class).hasMessage("escaneo.imagenIncompleta");
     }
 
     @Test
     void exigeLaCabeceraDeDeteccionDelContrato() {
         respuesta.set(e -> enviar(e, 200, jpeg, "image/jpeg", "", false));
         assertThatThrownBy(() -> cliente().escanear(jpeg, "image/jpeg"))
-                .isInstanceOf(EscaneoException.class).hasMessageContaining("respuesta no válida");
+                .isInstanceOf(EscaneoException.class).hasMessage("escaneo.respuestaInvalida");
     }
 
     @Test
@@ -166,7 +166,7 @@ class DocScannerClientTest {
         });
         var inicio = System.nanoTime();
         assertThatThrownBy(() -> cliente(100_000, Duration.ofMillis(250)).escanear(jpeg, "image/jpeg"))
-                .isInstanceOf(EscaneoException.class).hasMessageContaining("tardado demasiado");
+                .isInstanceOf(EscaneoException.class).hasMessage("escaneo.tiempo");
         assertThat(Duration.ofNanos(System.nanoTime() - inicio)).isLessThan(Duration.ofSeconds(2));
     }
 
@@ -174,13 +174,13 @@ class DocScannerClientTest {
     void servicioApagadoDaUnMensajeClaro() {
         servidor.stop(0);
         assertThatThrownBy(() -> cliente().escanear(jpeg, "image/jpeg"))
-                .isInstanceOf(EscaneoException.class).hasMessageContaining("Comprueba que está iniciado");
+                .isInstanceOf(EscaneoException.class).hasMessage("escaneo.conexion");
     }
 
     @Test
     void tiposNoCompatiblesNoSeEnvian() {
         assertThatThrownBy(() -> cliente().escanear(jpeg, "image/gif"))
-                .isInstanceOf(EscaneoException.class).hasMessageContaining("no admite escaneo");
+                .isInstanceOf(EscaneoException.class).hasMessage("escaneo.formato");
         assertThat(peticion.get()).isNull();
     }
 

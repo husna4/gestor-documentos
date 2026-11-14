@@ -13,7 +13,7 @@ import jakarta.validation.constraints.Size;
 public record SubidaForm(
         List<Long> seccionIds,
         Long personaId,
-        @Size(max = 2000, message = "Máximo {max} caracteres") String descripcion,
+        @Size(max = 2000, message = "{validacion.maximo}") String descripcion,
         Boolean escanearFotos) {
 
     /** Las llamadas que no solicitan escaneo conservan el flujo de almacenamiento original. */

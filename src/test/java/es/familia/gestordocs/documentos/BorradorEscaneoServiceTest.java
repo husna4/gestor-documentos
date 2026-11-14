@@ -3,16 +3,19 @@ package es.familia.gestordocs.documentos;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.*;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.util.unit.DataSize;
+
 import es.familia.gestordocs.Muestras;
 import es.familia.gestordocs.compartido.NoEncontradoException;
 import es.familia.gestordocs.compartido.ReglaNegocioException;
@@ -147,7 +150,7 @@ class BorradorEscaneoServiceTest {
     void noGuardaUnaVarianteQueNoSeHaGenerado() {
         var id = servicio.crear(Muestras.png("foto.png")).id();
         assertThatThrownBy(() -> servicio.reservar(new SeleccionBorrador(id, "bw")))
-                .isInstanceOf(ReglaNegocioException.class).hasMessageContaining("Previsualiza");
+                .isInstanceOf(ReglaNegocioException.class).hasMessage("escaneo.previsualizar");
         assertThatThrownBy(() -> servicio.filtrar(id, "../../secreto"))
                 .isInstanceOf(ReglaNegocioException.class).hasMessageContaining("filtro");
     }
@@ -155,7 +158,7 @@ class BorradorEscaneoServiceTest {
     @Test
     void unFalloDeApiNoSeCacheaYPermiteReintentarOUsarLaFuente() {
         when(escaneo.escanear(any(), anyString(), eq(FiltroEscaneo.bw), eq(true)))
-                .thenThrow(new EscaneoException("Servicio ocupado"))
+                .thenThrow(new EscaneoException("escaneo.ocupado"))
                 .thenReturn(new ResultadoEscaneo(procesada, true));
         var id = servicio.crear(Muestras.png("foto.png")).id();
         assertThatThrownBy(() -> servicio.filtrar(id, "bw")).isInstanceOf(EscaneoException.class);
@@ -170,15 +173,15 @@ class BorradorEscaneoServiceTest {
         servicio = configurar(10_000_000, 1);
         servicio.crear(Muestras.png("foto.png"));
         assertThatThrownBy(() -> servicio.crear(Muestras.png("otra.png")))
-                .isInstanceOf(ReglaNegocioException.class).hasMessageContaining("demasiadas");
+                .isInstanceOf(ReglaNegocioException.class).hasMessage("escaneo.demasiadas");
         when(usuarios.idUsuarioActual()).thenReturn(Optional.of(2L));
         assertThatThrownBy(() -> servicio.crear(Muestras.ejecutableDisfrazado("foto.jpg")))
-                .isInstanceOf(ReglaNegocioException.class).hasMessageContaining("compatible");
+                .isInstanceOf(ReglaNegocioException.class).hasMessage("escaneo.incompatible");
         assertThatThrownBy(() -> servicio.crear(Muestras.deTamano("enorme.jpg", 200 * 1024)))
-                .isInstanceOf(ReglaNegocioException.class).hasMessageContaining("tamaño");
+                .isInstanceOf(ReglaNegocioException.class).hasMessage("escaneo.fotoTamano");
         servicio = configurar(1, 5);
         assertThatThrownBy(() -> servicio.crear(Muestras.png("otra.png")))
-                .isInstanceOf(ReglaNegocioException.class).hasMessageContaining("espacio");
+                .isInstanceOf(ReglaNegocioException.class).hasMessage("escaneo.sinEspacio");
         verifyNoInteractions(escaneo);
     }
 

@@ -2,6 +2,9 @@
 # Los valores sensibles salen de variables de entorno: ${VARIABLE:valor-por-defecto}.
 
 spring:
+  messages:
+    encoding: UTF-8
+    fallback-to-system-locale: false
   application:
     name: gestor-documentos
   datasource:

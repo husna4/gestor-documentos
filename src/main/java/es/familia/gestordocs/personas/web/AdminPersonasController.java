@@ -10,8 +10,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import es.familia.gestordocs.compartido.Mensaje;
 import es.familia.gestordocs.personas.PersonaForm;
 import es.familia.gestordocs.personas.PersonaService;
+
 import jakarta.validation.Valid;
 
 /** Alta y edición de personas. El borrado (que avisa de los documentos afectados) está en el módulo portal. */
@@ -46,7 +48,7 @@ class AdminPersonasController {
             return FORMULARIO;
         }
         var persona = personaService.crear(form);
-        redirect.addFlashAttribute("mensaje", persona.nombreCompleto() + " añadida.");
+        redirect.addFlashAttribute("mensaje", Mensaje.de("personas.anadida", persona.nombreCompleto()));
         return "redirect:/admin/personas";
     }
 
@@ -65,7 +67,7 @@ class AdminPersonasController {
             return FORMULARIO;
         }
         var persona = personaService.actualizar(id, form);
-        redirect.addFlashAttribute("mensaje", persona.nombreCompleto() + " guardada.");
+        redirect.addFlashAttribute("mensaje", Mensaje.de("personas.guardada", persona.nombreCompleto()));
         return "redirect:/admin/personas";
     }
 }

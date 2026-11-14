@@ -4,11 +4,20 @@ import jakarta.validation.constraints.NotNull;
 
 /** Lo que el admin puede cambiar de un usuario existente (el username no cambia). */
 public record EdicionUsuarioForm(
-        @NotNull(message = "Elige un rol") Rol rol,
+        @NotNull(message = "{validacion.rol}") Rol rol,
         boolean activo,
-        Long personaId) {
+        Long personaId,
+        Idioma idioma) {
+
+    public EdicionUsuarioForm {
+        if (idioma == null) idioma = Idioma.es;
+    }
+
+    public EdicionUsuarioForm(Rol rol, boolean activo, Long personaId) {
+        this(rol, activo, personaId, Idioma.es);
+    }
 
     public static EdicionUsuarioForm desde(UsuarioDto usuario) {
-        return new EdicionUsuarioForm(usuario.rol(), usuario.activo(), usuario.personaId());
+        return new EdicionUsuarioForm(usuario.rol(), usuario.activo(), usuario.personaId(), usuario.idioma());
     }
 }
