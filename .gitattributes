@@ -10,3 +10,6 @@
 *.webp binary
 *.zip binary
 *.jar binary
+
+# Scripts ejecutados dentro de los contenedores Linux
+*.sh text eol=lf

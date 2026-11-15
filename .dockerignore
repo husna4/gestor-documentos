@@ -1,0 +1,16 @@
+# Solo entra en la construcción el código necesario. Quedan fuera .git,
+# .env, datos, copias, target, muestras y archivos locales de instrucciones.
+**
+!Dockerfile
+!pom.xml
+!mvnw
+!.mvn/
+!.mvn/wrapper/
+!.mvn/wrapper/maven-wrapper.properties
+!src/
+!src/**
+**/AGENTS.md
+**/.env*
+**/target/
+**/*.dump
+**/*.backup

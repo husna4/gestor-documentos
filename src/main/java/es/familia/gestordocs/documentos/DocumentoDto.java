@@ -2,6 +2,7 @@ package es.familia.gestordocs.documentos;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import es.familia.gestordocs.personas.PersonaDto;
 import es.familia.gestordocs.secciones.SeccionDto;
@@ -23,7 +24,11 @@ public record DocumentoDto(
         List<SeccionDto> secciones,
         String subidoPor,
         OffsetDateTime subidoEn,
-        boolean tieneMiniatura) {
+        UUID versionMiniatura) {
+
+    public boolean tieneMiniatura() {
+        return versionMiniatura != null;
+    }
 
     public boolean esImagen() {
         return tipoMime.startsWith("image/");

@@ -106,6 +106,16 @@ class PantallasTest {
     }
 
     @Test
+    void laMiniaturaUsaLaVersionDeLaImagenParaEvitarFotosAntiguasEnCache() throws Exception {
+        assertThat(foto.versionMiniatura()).isNotNull();
+        var urlMiniatura = "/documentos/" + foto.id() + "/miniatura?v=" + foto.versionMiniatura();
+        pagina("/", urlMiniatura);
+        pagina("/personas/" + maria.id(), urlMiniatura);
+        pagina("/buscar?q=maria", urlMiniatura);
+        pagina("/secciones/" + dni.id(), urlMiniatura);
+    }
+
+    @Test
     void pantallasDeAdministracion() throws Exception {
         pagina("/documentos/subir", "Hacer foto", "capture=\"environment\"", "DNI", "María López");
         pagina("/documentos/" + foto.id() + "/editar", "dni-maria");
@@ -137,6 +147,12 @@ class PantallasTest {
                 .andExpect(header().string("Content-Disposition", containsString("contrato.pdf")));
         mvc.perform(get("/documentos/" + foto.id() + "/miniatura").with(user(admin)))
                 .andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(content().contentType("image/jpeg"));
+        mvc.perform(get("/documentos/" + foto.id() + "/miniatura")
+                        .param("v", foto.versionMiniatura().toString()).with(user(admin)))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", "no-store"))
                 .andExpect(content().contentType("image/jpeg"));
         mvc.perform(get("/documentos/" + pdf.id() + "/miniatura").with(user(admin)))
                 .andExpect(status().isNotFound());

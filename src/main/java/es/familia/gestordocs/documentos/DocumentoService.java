@@ -420,7 +420,7 @@ public class DocumentoService {
                         .toList(),
                 usuarios.getOrDefault(d.getSubidoPorId(), "(usuario borrado)"),
                 d.getSubidoEn(),
-                d.getClaveMiniatura() != null))
+                d.getClaveMiniatura()))
                 .toList();
     }
 

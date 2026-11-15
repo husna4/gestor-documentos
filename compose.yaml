@@ -1,0 +1,89 @@
+services:
+  inicializacion:
+    image: postgres:17-bookworm
+    entrypoint: ["/bin/sh", "/scripts/inicializar-secretos.sh"]
+    environment:
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+    volumes:
+      - ./docker/inicializacion/inicializar-secretos.sh:/scripts/inicializar-secretos.sh:ro
+      - secretos-postgres:/run/db-secrets
+      - secretos-app:/run/app-secrets
+      # No regenerar contraseñas si ya existe una base de datos que las necesita.
+      - postgres:/var/lib/postgresql/data:ro
+    network_mode: none
+    restart: "no"
+
+  app:
+    build:
+      context: .
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/gestordocs
+      DB_USER: gestordocs
+      SPRING_CONFIG_IMPORT: configtree:/run/app-secrets/
+      APP_PORT: "8090"
+      APP_STORAGE_PATH: /datos/ficheros
+      APP_SCAN_TEMP_PATH: /datos/temporales/escaneo
+      APP_MAX_FILE_SIZE: ${APP_MAX_FILE_SIZE:-20MB}
+      APP_MAX_REQUEST_SIZE: ${APP_MAX_REQUEST_SIZE:-200MB}
+      DOCSCANNER_URL: http://docscanner:8091/api/scan
+      DOCSCANNER_CONNECT_TIMEOUT: ${DOCSCANNER_CONNECT_TIMEOUT:-3s}
+      DOCSCANNER_REQUEST_TIMEOUT: ${DOCSCANNER_REQUEST_TIMEOUT:-30s}
+      DOCSCANNER_MAX_RESPONSE_SIZE: ${DOCSCANNER_MAX_RESPONSE_SIZE:-20MB}
+      APP_SCAN_TEMP_TTL: ${APP_SCAN_TEMP_TTL:-30m}
+      APP_SCAN_TEMP_MAX_SIZE: ${APP_SCAN_TEMP_MAX_SIZE:-500MB}
+      APP_SCAN_TEMP_MAX_PER_USER: ${APP_SCAN_TEMP_MAX_PER_USER:-20}
+      APP_SCAN_TEMP_MAX_TOTAL: ${APP_SCAN_TEMP_MAX_TOTAL:-100}
+    ports:
+      - "${APP_PORT:-8090}:8090"
+    volumes:
+      - documentos:/datos/ficheros
+      - secretos-app:/run/app-secrets:ro
+    # Drafts depend on in-memory state and are discarded on restart.
+    tmpfs:
+      - /datos/temporales/escaneo:uid=10001,gid=10001,mode=0700
+    depends_on:
+      inicializacion:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    stop_grace_period: 30s
+
+  db:
+    image: postgres:17-bookworm
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD_FILE: /run/db-secrets/postgres-password
+    volumes:
+      - postgres:/var/lib/postgresql/data
+      - secretos-postgres:/run/db-secrets:ro
+      - secretos-app:/run/app-secrets:ro
+      - ./docker/postgres/10-crear-usuario.sql:/docker-entrypoint-initdb.d/10-crear-usuario.sql:ro
+    depends_on:
+      inicializacion:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d gestordocs"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+    stop_grace_period: 30s
+
+  docscanner:
+    build:
+      # BuildKit resolves main from Git on every build, even when a cache is available.
+      # Use the upstream project's Dockerfile and locked dependencies.
+      context: https://github.com/husna4/doc-scanner.git#main
+    # The upstream image includes an HTTP /health check and an unprivileged user.
+    # The document manager's availability does not depend on the scanner's health.
+    restart: unless-stopped
+    stop_grace_period: 30s
+
+volumes:
+  postgres:
+  documentos:
+  secretos-postgres:
+  secretos-app:
