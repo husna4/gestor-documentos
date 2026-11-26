@@ -1,123 +1,123 @@
-# Gestor de documentos
+# Document Manager
 
-Aplicación web para organizar documentos por personas y secciones, con acceso desde ordenador y móvil.
+A web application for organizing documents by person and section, accessible from desktop and mobile devices.
 
-- Usuarios con roles de administrador y consulta.
-- Subida múltiple y captura de fotos con recorte y filtros.
-- Búsqueda sin distinguir tildes, visor de imágenes y PDF, y descarga individual o en ZIP.
-- Validación de archivos, límites de tamaño y miniaturas.
+- Administrator and read-only user roles.
+- Multiple file uploads and photo capture with cropping and filters.
+- Accent-insensitive search, image and PDF previews, and individual or ZIP downloads.
+- File validation, size limits, and thumbnails.
 
-Desarrollada con Java 21, Spring Boot, PostgreSQL y Thymeleaf, htmx y Bootstrap. No requiere compilación con Node.js.
+Built with Java 21, Spring Boot, PostgreSQL, Thymeleaf, htmx, and Bootstrap. No Node.js build is required.
 
-## Instalación con Docker
+## Install with Docker
 
-Necesitas Docker con contenedores Linux y Compose v2 con BuildKit. Desde la raíz del repositorio:
+You need Docker with Linux containers and Compose v2 with BuildKit. From the repository root:
 
 ```sh
 docker compose up --build -d --wait
 ```
 
-Abre **http://localhost:8090** e inicia sesión como `admin`. Consulta la contraseña inicial con:
+Open [http://localhost:8090](http://localhost:8090) and sign in as `admin`. Retrieve the initial password with:
 
 ```sh
 docker compose exec app cat /run/app-secrets/app.admin.password
 ```
 
-Deberás cambiarla en el primer acceso; el comando seguirá mostrando la contraseña inicial.
+You must change it when you first sign in. The command will continue to show the initial password afterward.
 
-No necesitas crear `.env`: las contraseñas se generan y conservan automáticamente. Para personalizar el puerto, los límites o el usuario inicial, copia [.env.example](.env.example) a `.env` antes del primer arranque. Cambiar `ADMIN_USERNAME` después no modifica el usuario creado.
+You do not need to create `.env`: passwords are generated and persisted automatically. To customize the port, limits, or initial username, copy [.env.example](.env.example) to `.env` before the first startup. Changing `ADMIN_USERNAME` afterward does not modify the existing account.
 
-Docker arranca el gestor, PostgreSQL y DocScanner en una instalación independiente de los datos de desarrollo local.
+Docker starts the document manager, PostgreSQL, and DocScanner in an installation separate from your local development data.
 
-### Comandos habituales
+### Common commands
 
 ```sh
-docker compose ps                  # Consultar el estado
-docker compose logs --tail=100 app # Ver los últimos logs del gestor
-docker compose stop               # Detener
-docker compose start --wait        # Volver a arrancar
-docker compose down               # Eliminar contenedores, conservando los datos
+docker compose ps                  # Check service status
+docker compose logs --tail=100 app # View recent application logs
+docker compose stop               # Stop services
+docker compose start --wait        # Start services again
+docker compose down               # Remove containers while keeping data
 ```
 
-Para actualizar, descarga el código nuevo y repite `docker compose up --build -d --wait`. La construcción también toma la versión actual de la rama `main` de [DocScanner](https://github.com/husna4/doc-scanner).
+To update, get the latest code and run `docker compose up --build -d --wait` again. The build also uses the current version of the [DocScanner](https://github.com/husna4/doc-scanner) `main` branch.
 
-### Datos y copias
+### Data and backups
 
-Los volúmenes `postgres` y `documentos` guardan la base de datos y los archivos; `secretos-postgres` y `secretos-app`, las credenciales. Docker añade el nombre del proyecto como prefijo.
+The `postgres` and `documentos` volumes store the database and uploaded files. The `secretos-postgres` and `secretos-app` volumes store credentials. Docker prefixes volume names with the project name.
 
-Para una copia completa, detén el gestor y respalda la base de datos, los documentos y los secretos. Guarda las copias en un lugar privado fuera del equipo, junto con `.env` si lo utilizas.
+For a complete backup, stop the application and back up the database, documents, and secrets. Keep backups in a private location on another device, together with `.env` if you use it.
 
-**`docker compose down --volumes` elimina todos los datos y secretos.** No lo uses para detener o actualizar la aplicación.
+**`docker compose down --volumes` deletes all data and secrets.** Do not use it to stop or update the application.
 
-## Desarrollo local
+## Local development
 
-Necesitas JDK 21 y PostgreSQL 13 o superior, con `psql` en el PATH. Maven Wrapper descarga Maven y las dependencias.
+You need JDK 21 and PostgreSQL 13 or later, with `psql` on your PATH. Maven Wrapper downloads Maven and its dependencies.
 
-Crea el usuario y las bases de datos:
+Create the database user and databases:
 
 ```powershell
 psql -U postgres -f scripts/crear-bd.sql
 ```
 
-El script solicita la contraseña de `gestordocs` y crea las bases `gestordocs` y `gestordocs_test`. Flyway aplica las migraciones al arrancar.
+The script prompts for the `gestordocs` password and creates the `gestordocs` and `gestordocs_test` databases. Flyway applies migrations at startup.
 
-Configura las variables y arranca en PowerShell:
+Set the environment variables and start the application in PowerShell:
 
 ```powershell
-$env:DB_PASSWORD = 'contraseña-de-la-base-de-datos'
+$env:DB_PASSWORD = 'your-database-password'
 $env:ADMIN_USERNAME = 'admin'
-$env:ADMIN_PASSWORD = 'contraseña-inicial'
+$env:ADMIN_PASSWORD = 'your-initial-password'
 $env:REMEMBER_ME_KEY = [guid]::NewGuid().ToString('N') + [guid]::NewGuid().ToString('N')
 .\mvnw.cmd spring-boot:run
 ```
 
-Abre **http://localhost:8090**. El administrador inicial debe cambiar su contraseña en el primer acceso.
+Open [http://localhost:8090](http://localhost:8090). The initial administrator must change their password when first signing in.
 
-Si ya guardaste las variables como variables de usuario de Windows, puedes arrancar con:
+If you have already saved these variables as Windows user environment variables, you can start the application with:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\arrancar.ps1
 ```
 
-### Configuración
+### Configuration
 
-| Variable | Valor predeterminado o uso |
+| Variable | Default value or purpose |
 |---|---|
-| `DB_PASSWORD` | Obligatoria: contraseña de PostgreSQL |
-| `REMEMBER_ME_KEY` | Obligatoria: clave para la sesión persistente |
-| `ADMIN_USERNAME`, `ADMIN_PASSWORD` | Obligatorias si aún no hay usuarios |
+| `DB_PASSWORD` | Required: PostgreSQL password |
+| `REMEMBER_ME_KEY` | Required: signing key for persistent sign-in |
+| `ADMIN_USERNAME`, `ADMIN_PASSWORD` | Required when no user accounts exist yet |
 | `DB_URL` | `jdbc:postgresql://localhost:5432/gestordocs` |
 | `DB_USER` | `gestordocs` |
 | `APP_PORT` | `8090` |
 | `APP_STORAGE_PATH` | `./datos/ficheros` |
-| `APP_MAX_FILE_SIZE` | `20MB` por archivo |
-| `APP_MAX_REQUEST_SIZE` | `200MB` por petición |
+| `APP_MAX_FILE_SIZE` | `20MB` per file |
+| `APP_MAX_REQUEST_SIZE` | `200MB` per request |
 | `DB_TEST_URL` | `jdbc:postgresql://localhost:5432/gestordocs_test` |
 
-## Uso y escaneo de fotos
+## Usage and photo scanning
 
-El administrador gestiona personas, secciones, usuarios y documentos. Los usuarios de consulta pueden buscar, previsualizar y descargar documentos.
+Administrators manage people, sections, users, and documents. Read-only users can search, preview, and download documents.
 
-**Hacer foto** permite capturar imágenes desde el móvil. Antes de guardar puedes comparar el original con versiones recortadas y filtradas. **Guardar documento** conserva la versión elegida; **Foto original** guarda el archivo sin cambios y sigue disponible si falla el escáner.
+**Take a photo** captures an image from a mobile device. Before saving, you can compare the original with cropped and filtered versions. **Save document** saves the selected version. **Original photo** keeps the file unchanged and remains available if scanning fails.
 
-Con Docker, DocScanner arranca automáticamente. Para desarrollo local, sigue el [README de DocScanner](https://github.com/husna4/doc-scanner). El gestor lo busca en `http://127.0.0.1:8091/api/scan`; puedes cambiarlo con `DOCSCANNER_URL`.
+With Docker, DocScanner starts automatically. For local development, follow the [DocScanner README](https://github.com/husna4/doc-scanner). The document manager connects to `http://127.0.0.1:8091/api/scan` by default; override this with `DOCSCANNER_URL` if needed.
 
-Los borradores de fotos caducan tras 30 minutos de inactividad y se descartan al reiniciar. Las demás opciones de escaneo están en [application.yml](src/main/resources/application.yml).
+Photo drafts expire after 30 minutes of inactivity and are discarded on restart. Other scanning options are documented in [application.yml](src/main/resources/application.yml).
 
-## Copias en desarrollo local
+## Local development backups
 
-Detén el gestor y copia tanto la base de datos como la carpeta de archivos:
+Stop the application and back up both the database and the uploaded files directory:
 
 ```powershell
 pg_dump -U gestordocs -F c -f copia-gestordocs.dump gestordocs
 Compress-Archive -Path datos\ficheros -DestinationPath copia-ficheros.zip
 ```
 
-Si personalizas `APP_STORAGE_PATH`, utiliza esa carpeta al hacer la copia.
+If you customize `APP_STORAGE_PATH`, use that directory when making the backup.
 
-## Tests y empaquetado
+## Tests and packaging
 
-Con PostgreSQL en marcha y `DB_PASSWORD` configurada:
+With PostgreSQL running and `DB_PASSWORD` configured:
 
 ```powershell
 .\mvnw.cmd test
@@ -125,58 +125,34 @@ Con PostgreSQL en marcha y `DB_PASSWORD` configurada:
 java -jar target\gestor-documentos-0.0.1-SNAPSHOT.jar
 ```
 
-Los tests usan `gestordocs_test` y simulan DocScanner. Para probar con el servicio real, configura `DOCSCANNER_LIVE_TEST=true`. La carpeta `muestras/` contiene archivos para pruebas manuales.
+Tests use `gestordocs_test` and simulate DocScanner. To test against the real service, set `DOCSCANNER_LIVE_TEST=true`. The `muestras/` directory contains files for manual testing.
 
-Para comprobar solo los límites entre módulos, sin PostgreSQL:
+To check module boundaries without PostgreSQL:
 
 ```powershell
 .\mvnw.cmd "-Dtest=ModularidadTest" test
 ```
 
-## Idiomas de la interfaz
+## Interface languages
 
-La interfaz está disponible en **Español** y **English**. La preferencia pertenece a cada
-navegador y no se guarda ni se configura en las cuentas de usuario.
+The interface is available in **Spanish** and **English**. The preference belongs to each browser and is not stored or configured in user accounts.
 
-En la primera visita se utiliza la cabecera de idioma del navegador (`Accept-Language`),
-respetando el orden de preferencia: por ejemplo, `en-GB` selecciona inglés y `es-ES`, español.
-Si no hay ninguna preferencia compatible o la cabecera es inválida, se utiliza español.
-La ubicación geográfica y el idioma del sistema del servidor no intervienen.
+On the first visit, the application uses the browser's `Accept-Language` header, respecting its preference order. For example, `en-GB` selects English and `es-ES` selects Spanish. If no supported language matches or the header is invalid, the application uses Spanish. Geographic location and the server's system language are not used.
 
-El selector aparece en la navegación, el login y la pantalla de cambio obligatorio de
-contraseña. Al elegir una opción se aplica automáticamente y se guarda una cookie `idioma`
-durante un año. La elección manual prevalece sobre el idioma anunciado por el navegador.
-Cada navegador o dispositivo conserva su propia selección, también al entrar, salir,
-utilizar «Recordarme» o cambiar de cuenta. Sin JavaScript se ofrece un botón alternativo.
-El cambio sigue usando POST con CSRF; no modifica ninguna cuenta.
+The language selector appears in the navigation bar, on the sign-in page, and on the mandatory password change page. Selecting a language applies it automatically and saves an `idioma` cookie for one year. A manual selection takes precedence over the browser's advertised language. Each browser or device keeps its own selection when signing in, signing out, using **Remember me**, or switching accounts. A fallback button is available when JavaScript is disabled. Changes still use POST with CSRF protection and do not modify any account.
 
-La migración `V6__idioma_en_navegador.sql` retira la antigua columna de idioma del usuario.
-La migración V5 ya aplicada se conserva sin cambios. Las cuentas, permisos, contraseñas,
-documentos y archivos se mantienen.
+Migration `V6__idioma_en_navegador.sql` removes the former user language column. The previously applied V5 migration remains unchanged. Accounts, permissions, passwords, documents, and uploaded files are preserved.
 
-En la subida, cambiar de idioma recarga la pantalla. Si hay archivos pendientes, se pide
-confirmación **antes** de enviar el cambio; cancelar conserva los archivos y restaura el idioma mostrado en el desplegable. Continuar pierde
-esa selección sin guardarla. Durante la preparación o el guardado se bloquea el cambio.
-Los borradores abandonados se eliminan mediante la caducidad habitual.
+Changing the language on the upload page reloads it. If files are pending, the application asks for confirmation **before** submitting the change. Canceling keeps the files and restores the previous dropdown selection. Continuing discards the selection without saving it. Language changes are disabled while previews are being prepared or files are being saved. Abandoned drafts are removed through the usual expiration process.
 
-Los nombres, descripciones, notas y ficheros de usuarios se mantienen tal como se escribieron.
-También se mantienen los formatos actuales de fechas y números y la configuración de búsqueda.
+User-entered names, descriptions, notes, and files remain unchanged. Existing date and number formats and search settings are also preserved.
 
-Para mantener o añadir traducciones:
+To maintain or add translations:
 
-- `src/main/resources/messages.properties` es el catálogo base completo en español;
-  `messages_en.properties` contiene las mismas claves en inglés. Ambos usan UTF-8.
-- Usar claves semánticas y mensajes completos con argumentos `{0}`, `{1}`, etc. Las
-  validaciones usan los mismos catálogos con sus parámetros propios (`{min}`, `{max}`).
-- Los servicios devuelven `Mensaje` (clave y argumentos), sin depender del idioma HTTP.
-  Thymeleaf y los adaptadores web resuelven el texto al presentarlo. Los contratos JSON
-  conservan `mensaje`, `subidos`, `errores` y `avisos`; estos dos últimos siguen siendo listas de texto.
-- El JavaScript de subida recibe únicamente sus mensajes mediante la serialización segura
-  de Thymeleaf. Los datos dinámicos se muestran con `textContent`.
-- Ejecutar `I18nCatalogosTest` para comprobar equivalencia de claves y parámetros.
-  `IdiomaWebTest`, `I18nMigracionTest` y `PantallasTest` cubren preferencias, seguridad,
-  migración, validaciones, JSON y renderizado en ambos idiomas.
+- `src/main/resources/messages.properties` is the complete Spanish base catalog; `messages_en.properties` contains the same keys in English. Both use UTF-8.
+- Use semantic keys and complete messages with arguments such as `{0}` and `{1}`. Validation messages use the same catalogs with their own parameters, such as `{min}` and `{max}`.
+- Services return `Mensaje` objects containing a key and arguments, independently of the HTTP locale. Thymeleaf and web adapters resolve text when displaying it. JSON contracts retain `mensaje`, `subidos`, `errores`, and `avisos`; the last two remain lists of text messages.
+- The upload JavaScript receives only the messages it needs through safe Thymeleaf serialization. Dynamic content is displayed with `textContent`.
+- Run `I18nCatalogosTest` to check matching keys and parameters. `IdiomaWebTest`, `I18nMigracionTest`, and `PantallasTest` cover preferences, security, migrations, validation, JSON responses, and rendering in both languages.
 
-En trabajos simultáneos, `DB_TEST_URL` debe apuntar a una base dedicada y el almacenamiento
-y los borradores deben quedar dentro del worktree de pruebas. Las pruebas normales mantienen
-DocScanner simulado; no se necesita arrancar el servicio real.
+When working on concurrent changes, point `DB_TEST_URL` at a dedicated test database and keep storage and drafts inside the test worktree. Regular tests simulate DocScanner; the real service does not need to be running.
