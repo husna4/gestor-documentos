@@ -1,5 +1,7 @@
 # Document Manager
 
+**English** | [Español](README.es.md)
+
 A web application for organizing documents by person and section, accessible from desktop and mobile devices.
 
 - Administrator and read-only user roles.
