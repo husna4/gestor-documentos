@@ -137,24 +137,4 @@ To check module boundaries without PostgreSQL:
 
 ## Interface languages
 
-The interface is available in **Spanish** and **English**. The preference belongs to each browser and is not stored or configured in user accounts.
-
-On the first visit, the application uses the browser's `Accept-Language` header, respecting its preference order. For example, `en-GB` selects English and `es-ES` selects Spanish. If no supported language matches or the header is invalid, the application uses Spanish. Geographic location and the server's system language are not used.
-
-The language selector appears in the navigation bar, on the sign-in page, and on the mandatory password change page. Selecting a language applies it automatically and saves an `idioma` cookie for one year. A manual selection takes precedence over the browser's advertised language. Each browser or device keeps its own selection when signing in, signing out, using **Remember me**, or switching accounts. A fallback button is available when JavaScript is disabled. Changes still use POST with CSRF protection and do not modify any account.
-
-Migration `V6__idioma_en_navegador.sql` removes the former user language column. The previously applied V5 migration remains unchanged. Accounts, permissions, passwords, documents, and uploaded files are preserved.
-
-Changing the language on the upload page reloads it. If files are pending, the application asks for confirmation **before** submitting the change. Canceling keeps the files and restores the previous dropdown selection. Continuing discards the selection without saving it. Language changes are disabled while previews are being prepared or files are being saved. Abandoned drafts are removed through the usual expiration process.
-
-User-entered names, descriptions, notes, and files remain unchanged. Existing date and number formats and search settings are also preserved.
-
-To maintain or add translations:
-
-- `src/main/resources/messages.properties` is the complete Spanish base catalog; `messages_en.properties` contains the same keys in English. Both use UTF-8.
-- Use semantic keys and complete messages with arguments such as `{0}` and `{1}`. Validation messages use the same catalogs with their own parameters, such as `{min}` and `{max}`.
-- Services return `Mensaje` objects containing a key and arguments, independently of the HTTP locale. Thymeleaf and web adapters resolve text when displaying it. JSON contracts retain `mensaje`, `subidos`, `errores`, and `avisos`; the last two remain lists of text messages.
-- The upload JavaScript receives only the messages it needs through safe Thymeleaf serialization. Dynamic content is displayed with `textContent`.
-- Run `I18nCatalogosTest` to check matching keys and parameters. `IdiomaWebTest`, `I18nMigracionTest`, and `PantallasTest` cover preferences, security, migrations, validation, JSON responses, and rendering in both languages.
-
-When working on concurrent changes, point `DB_TEST_URL` at a dedicated test database and keep storage and drafts inside the test worktree. Regular tests simulate DocScanner; the real service does not need to be running.
+Available in English and Spanish. The app initially uses your browser's language. You can change it from the dropdown, and your choice is remembered in that browser.

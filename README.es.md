@@ -137,48 +137,4 @@ Para comprobar solo los límites entre módulos, sin PostgreSQL:
 
 ## Idiomas de la interfaz
 
-La interfaz está disponible en **Español** y **English**. La preferencia pertenece a cada
-navegador y no se guarda ni se configura en las cuentas de usuario.
-
-En la primera visita se utiliza la cabecera de idioma del navegador (`Accept-Language`),
-respetando el orden de preferencia: por ejemplo, `en-GB` selecciona inglés y `es-ES`, español.
-Si no hay ninguna preferencia compatible o la cabecera es inválida, se utiliza español.
-La ubicación geográfica y el idioma del sistema del servidor no intervienen.
-
-El selector aparece en la navegación, el login y la pantalla de cambio obligatorio de
-contraseña. Al elegir una opción se aplica automáticamente y se guarda una cookie `idioma`
-durante un año. La elección manual prevalece sobre el idioma anunciado por el navegador.
-Cada navegador o dispositivo conserva su propia selección, también al entrar, salir,
-utilizar «Recordarme» o cambiar de cuenta. Sin JavaScript se ofrece un botón alternativo.
-El cambio sigue usando POST con CSRF; no modifica ninguna cuenta.
-
-La migración `V6__idioma_en_navegador.sql` retira la antigua columna de idioma del usuario.
-La migración V5 ya aplicada se conserva sin cambios. Las cuentas, permisos, contraseñas,
-documentos y archivos se mantienen.
-
-En la subida, cambiar de idioma recarga la pantalla. Si hay archivos pendientes, se pide
-confirmación **antes** de enviar el cambio; cancelar conserva los archivos y restaura el idioma mostrado en el desplegable. Continuar pierde
-esa selección sin guardarla. Durante la preparación o el guardado se bloquea el cambio.
-Los borradores abandonados se eliminan mediante la caducidad habitual.
-
-Los nombres, descripciones, notas y ficheros de usuarios se mantienen tal como se escribieron.
-También se mantienen los formatos actuales de fechas y números y la configuración de búsqueda.
-
-Para mantener o añadir traducciones:
-
-- `src/main/resources/messages.properties` es el catálogo base completo en español;
-  `messages_en.properties` contiene las mismas claves en inglés. Ambos usan UTF-8.
-- Usar claves semánticas y mensajes completos con argumentos `{0}`, `{1}`, etc. Las
-  validaciones usan los mismos catálogos con sus parámetros propios (`{min}`, `{max}`).
-- Los servicios devuelven `Mensaje` (clave y argumentos), sin depender del idioma HTTP.
-  Thymeleaf y los adaptadores web resuelven el texto al presentarlo. Los contratos JSON
-  conservan `mensaje`, `subidos`, `errores` y `avisos`; estos dos últimos siguen siendo listas de texto.
-- El JavaScript de subida recibe únicamente sus mensajes mediante la serialización segura
-  de Thymeleaf. Los datos dinámicos se muestran con `textContent`.
-- Ejecutar `I18nCatalogosTest` para comprobar equivalencia de claves y parámetros.
-  `IdiomaWebTest`, `I18nMigracionTest` y `PantallasTest` cubren preferencias, seguridad,
-  migración, validaciones, JSON y renderizado en ambos idiomas.
-
-En trabajos simultáneos, `DB_TEST_URL` debe apuntar a una base dedicada y el almacenamiento
-y los borradores deben quedar dentro del worktree de pruebas. Las pruebas normales mantienen
-DocScanner simulado; no se necesita arrancar el servicio real.
+Disponible en español e inglés. La aplicación usa inicialmente el idioma del navegador. Puedes cambiarlo desde el desplegable y tu elección se recuerda en ese navegador.
