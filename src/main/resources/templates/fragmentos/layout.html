@@ -16,6 +16,7 @@
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
     <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
     <link rel="stylesheet" th:href="@{/css/app.css}">
+    <script th:src="@{/js/interfaz.js}" defer></script>
 </head>
 
 <body>
@@ -27,7 +28,9 @@
         <option value="en" lang="en" th:selected="${#locale.language == 'en'}">English</option>
     </select>
     <input type="hidden" name="volver" th:value="${volverIdioma}">
-    <button class="btn btn-sm btn-secondary" type="submit" th:text="#{comun.cambiarIdioma}">Cambiar idioma</button>
+    <noscript>
+        <button class="btn btn-sm btn-secondary" type="submit" th:text="#{comun.cambiarIdioma}">Cambiar idioma</button>
+    </noscript>
 </form>
 
 
@@ -98,7 +101,6 @@
 <th:block th:fragment="scripts">
     <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
     <script th:src="@{/webjars/htmx.org/dist/htmx.min.js}"></script>
-    <script th:src="@{/js/interfaz.js}" defer></script>
 </th:block>
 
 </body>

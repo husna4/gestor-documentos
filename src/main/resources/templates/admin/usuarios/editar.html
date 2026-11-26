@@ -15,14 +15,6 @@
                     <p th:each="error : ${#fields.globalErrors()}" th:text="${@mensajes.texto(error)}" class="mb-0">Error</p>
                 </div>
                 <div class="mb-3">
-                    <label for="idioma" class="form-label" th:text="#{comun.idioma}">Idioma</label>
-                    <select th:field="*{idioma}" class="form-select" th:errorclass="is-invalid">
-                        <option value="es" lang="es">Español</option>
-                        <option value="en" lang="en">English</option>
-                    </select>
-                    <div class="invalid-feedback" th:errors="*{idioma}"></div>
-                </div>
-                <div class="mb-3">
                     <label for="rol" class="form-label" th:text="#{usuarios.rol}">Rol</label>
                     <select th:field="*{rol}" class="form-select" th:errorclass="is-invalid">
                         <option value="USER" th:text="#{usuarios.rolUsuarioAyuda}">Usuario: solo ver y descargar</option>

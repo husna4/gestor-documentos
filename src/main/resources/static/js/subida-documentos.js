@@ -32,7 +32,7 @@
             : entradas.length > 1 ? texto('guardarVarios', entradas.length) : texto('guardarUno');
         descartar.classList.toggle('d-none', !entradas.length);
         descartar.disabled = ocupada;
-        document.querySelectorAll('[data-selector-idioma] button').forEach(b => { b.disabled = ocupada; });
+        document.querySelectorAll('[data-selector-idioma] select').forEach(s => { s.disabled = ocupada; });
         escanear.disabled = ocupada;
         selectores.forEach(s => { s.disabled = guardando; });
         entradas.forEach(e => {
@@ -287,11 +287,14 @@
         selector.addEventListener('submit', evento => {
             if (guardando || pendientes) {
                 evento.preventDefault();
+                selector.querySelector('select').value = document.documentElement.lang;
                 return;
             }
             if (entradas.length) {
-                if (!window.confirm(texto('cambiarIdioma'))) evento.preventDefault();
-                else salirPorIdioma = true;
+                if (!window.confirm(texto('cambiarIdioma'))) {
+                    evento.preventDefault();
+                    selector.querySelector('select').value = document.documentElement.lang;
+                } else salirPorIdioma = true;
             }
         });
     });

@@ -25,7 +25,6 @@ class AdminInicialTest {
     void alArrancarSeCreaElAdminConLasCredencialesDeLaConfiguracion() {
         var admin = usuarios.findByUsername("admin").orElseThrow();
 
-        assertThat(admin.getIdioma()).isEqualTo(es.familia.gestordocs.usuarios.Idioma.es);
         assertThat(admin.getRol()).isEqualTo(Rol.ADMIN);
         assertThat(admin.isActivo()).isTrue();
         assertThat(admin.isDebeCambiarPassword()).isTrue();

@@ -19,16 +19,7 @@ public record NuevoUsuarioForm(
         @Size(min = UsuarioService.LONGITUD_MINIMA_PASSWORD, max = 100, message = "{validacion.passwordLongitud}")
         String password,
         @NotNull(message = "{validacion.rol}") Rol rol,
-        Long personaId,
-        Idioma idioma) {
-
-    public NuevoUsuarioForm {
-        if (idioma == null) idioma = Idioma.es;
-    }
-
-    public NuevoUsuarioForm(String username, String password, Rol rol, Long personaId) {
-        this(username, password, rol, personaId, Idioma.es);
-    }
+        Long personaId) {
 
     public static NuevoUsuarioForm vacio() {
         return new NuevoUsuarioForm("", "", Rol.USER, null);

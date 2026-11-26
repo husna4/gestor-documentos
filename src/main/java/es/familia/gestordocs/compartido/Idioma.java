@@ -1,8 +1,8 @@
-package es.familia.gestordocs.usuarios;
+package es.familia.gestordocs.compartido;
 
 import java.util.Locale;
 
-/** Códigos estables almacenados como texto, nunca como ordinales. */
+/** Idiomas de la interfaz disponibles para cada navegador. */
 public enum Idioma {
     es, en;
 

@@ -1,4 +1,4 @@
-package es.familia.gestordocs.usuarios.web;
+package es.familia.gestordocs.compartido.web;
 
 import java.net.URI;
 import java.time.Duration;
@@ -9,22 +9,16 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import es.familia.gestordocs.usuarios.Idioma;
-import es.familia.gestordocs.usuarios.UsuarioService;
+import es.familia.gestordocs.compartido.Idioma;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 @Controller
 class IdiomaController {
-    private final UsuarioService usuarios;
-
-    IdiomaController(UsuarioService usuarios) { this.usuarios = usuarios; }
-
     @PostMapping("/idioma")
     String cambiar(@RequestParam Idioma idioma, @RequestParam(defaultValue = "/") String volver,
             HttpServletRequest request, HttpServletResponse response) {
-        if (usuarios.idUsuarioActual().isPresent()) usuarios.cambiarIdiomaPropio(idioma);
         response.addHeader(HttpHeaders.SET_COOKIE, ResponseCookie.from("idioma", idioma.name())
                 .path(request.getContextPath().isEmpty() ? "/" : request.getContextPath())
                 .httpOnly(true).secure(request.isSecure()).sameSite("Lax")

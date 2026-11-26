@@ -29,7 +29,7 @@ class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/idioma").permitAll()
-                        .requestMatchers("/login", "/webjars/**", "/css/**", "/favicon.ico", "/error").permitAll()
+                        .requestMatchers("/login", "/js/interfaz.js", "/webjars/**", "/css/**", "/favicon.ico", "/error").permitAll()
                         .requestMatchers("/admin/**", "/documentos/escaneos", "/documentos/escaneos/**").hasRole("ADMIN")
                         .requestMatchers("/documentos/subir", "/documentos/*/editar", "/documentos/*/borrar")
                         .hasRole("ADMIN")

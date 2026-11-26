@@ -68,12 +68,6 @@ public class UsuarioService {
         usuario.cambiarPassword(passwordEncoder.encode(nueva));
     }
 
-    @PreAuthorize("isAuthenticated()")
-    @Transactional
-    public void cambiarIdiomaPropio(Idioma idioma) {
-        usuarioActualEntidad().setIdioma(java.util.Objects.requireNonNull(idioma));
-    }
-
     // ---- Consultas ----
 
     /** Nombres de usuario por id, para mostrar "subido por" en los documentos. */
@@ -105,7 +99,6 @@ public class UsuarioService {
         validarPersona(datos.personaId());
         var usuario = new Usuario(username, passwordEncoder.encode(datos.password()), datos.rol(), true);
         usuario.setPersonaId(datos.personaId());
-        usuario.setIdioma(datos.idioma());
         return usuarios.save(usuario).toDto();
     }
 
@@ -124,7 +117,6 @@ public class UsuarioService {
         usuario.setRol(datos.rol());
         usuario.setActivo(datos.activo());
         usuario.setPersonaId(datos.personaId());
-        usuario.setIdioma(datos.idioma());
         return usuario.toDto();
     }
 

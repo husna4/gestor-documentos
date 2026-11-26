@@ -3,7 +3,6 @@ package es.familia.gestordocs.usuarios.internal;
 import java.time.OffsetDateTime;
 import java.util.Locale;
 
-import es.familia.gestordocs.usuarios.Idioma;
 import es.familia.gestordocs.usuarios.Rol;
 import es.familia.gestordocs.usuarios.UsuarioDto;
 
@@ -34,10 +33,6 @@ public class Usuario {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
     private Rol rol;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 2)
-    private Idioma idioma = Idioma.es;
 
     @Column(nullable = false)
     private boolean activo = true;
@@ -84,7 +79,7 @@ public class Usuario {
     }
 
     public UsuarioDto toDto() {
-        return new UsuarioDto(id, username, rol, activo, debeCambiarPassword, personaId, idioma);
+        return new UsuarioDto(id, username, rol, activo, debeCambiarPassword, personaId);
     }
 
     public Long getId() {
@@ -97,14 +92,6 @@ public class Usuario {
 
     public String getPasswordHash() {
         return passwordHash;
-    }
-
-    public Idioma getIdioma() {
-        return idioma;
-    }
-
-    public void setIdioma(Idioma idioma) {
-        this.idioma = java.util.Objects.requireNonNull(idioma);
     }
 
     public Rol getRol() {

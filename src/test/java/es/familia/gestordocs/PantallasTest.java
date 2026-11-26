@@ -32,8 +32,7 @@ import es.familia.gestordocs.personas.PersonaService;
 import es.familia.gestordocs.secciones.SeccionDto;
 import es.familia.gestordocs.secciones.SeccionForm;
 import es.familia.gestordocs.secciones.SeccionService;
-import es.familia.gestordocs.usuarios.Idioma;
-import es.familia.gestordocs.usuarios.UsuarioService;
+import jakarta.servlet.http.Cookie;
 import es.familia.gestordocs.usuarios.internal.UsuarioAutenticado;
 
 /** Renderiza cada pantalla con datos reales: detecta errores en las plantillas Thymeleaf. */
@@ -42,9 +41,6 @@ class PantallasTest {
 
     @Autowired
     MockMvc mvc;
-
-    @Autowired
-    UsuarioService usuarios;
 
     boolean en;
 
@@ -90,9 +86,6 @@ class PantallasTest {
     @ValueSource(strings = {"es", "en"})
     void pantallasDeConsulta(String codigo) throws Exception {
         en = "en".equals(codigo);
-        sesion.comoAdmin();
-        usuarios.cambiarIdiomaPropio(Idioma.valueOf(codigo));
-        sesion.cerrar();
         pagina("/", "DNI", "María López", "dni-maria");
         pagina("/secciones/" + dni.id(), "Documentos de identidad", "dni-maria", "Descargar todo (ZIP)");
         pagina("/secciones/" + dni.id() + "?persona=" + maria.id(), "dni-maria");
@@ -133,9 +126,6 @@ class PantallasTest {
     @ValueSource(strings = {"es", "en"})
     void pantallasDeAdministracion(String codigo) throws Exception {
         en = "en".equals(codigo);
-        sesion.comoAdmin();
-        usuarios.cambiarIdiomaPropio(Idioma.valueOf(codigo));
-        sesion.cerrar();
         pagina("/documentos/subir", "Hacer foto", "capture=\"environment\"", "DNI", "María López");
         pagina("/documentos/" + foto.id() + "/editar", "dni-maria");
         pagina("/admin/personas", "María López");
@@ -198,7 +188,7 @@ class PantallasTest {
     }
 
     private void pagina(String url, String... textos) throws Exception {
-        var html = mvc.perform(get(url).with(user(admin)))
+        var html = mvc.perform(get(url).with(user(admin)).cookie(new Cookie("idioma", en ? "en" : "es")))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         var traducciones = java.util.Map.ofEntries(

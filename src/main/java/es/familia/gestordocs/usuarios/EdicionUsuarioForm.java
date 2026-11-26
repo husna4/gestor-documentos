@@ -6,18 +6,9 @@ import jakarta.validation.constraints.NotNull;
 public record EdicionUsuarioForm(
         @NotNull(message = "{validacion.rol}") Rol rol,
         boolean activo,
-        Long personaId,
-        Idioma idioma) {
-
-    public EdicionUsuarioForm {
-        if (idioma == null) idioma = Idioma.es;
-    }
-
-    public EdicionUsuarioForm(Rol rol, boolean activo, Long personaId) {
-        this(rol, activo, personaId, Idioma.es);
-    }
+        Long personaId) {
 
     public static EdicionUsuarioForm desde(UsuarioDto usuario) {
-        return new EdicionUsuarioForm(usuario.rol(), usuario.activo(), usuario.personaId(), usuario.idioma());
+        return new EdicionUsuarioForm(usuario.rol(), usuario.activo(), usuario.personaId());
     }
 }

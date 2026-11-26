@@ -135,20 +135,27 @@ Para comprobar solo los límites entre módulos, sin PostgreSQL:
 
 ## Idiomas de la interfaz
 
-La interfaz está disponible en **Español** y **English**. Español es el valor inicial de todas
-las cuentas, incluido el administrador de primer arranque y los usuarios anteriores a la
-migración aditiva `V5__idioma_usuario.sql`. Solo se guardan los códigos `es` y `en`.
+La interfaz está disponible en **Español** y **English**. La preferencia pertenece a cada
+navegador y no se guarda ni se configura en las cuentas de usuario.
+
+En la primera visita se utiliza la cabecera de idioma del navegador (`Accept-Language`),
+respetando el orden de preferencia: por ejemplo, `en-GB` selecciona inglés y `es-ES`, español.
+Si no hay ninguna preferencia compatible o la cabecera es inválida, se utiliza español.
+La ubicación geográfica y el idioma del sistema del servidor no intervienen.
 
 El selector aparece en la navegación, el login y la pantalla de cambio obligatorio de
-contraseña. El cambio se envía por POST con CSRF. Con sesión iniciada guarda la preferencia
-propia en la cuenta y una cookie de navegador; el administrador también puede elegir el idioma
-al crear o editar otra cuenta. La preferencia de la cuenta prevalece sobre la cookie, incluso
-con «Recordarme», y los cambios administrativos se reflejan en la siguiente petición.
-Sin sesión solo se consulta la cookie validada; sin ella se usa español, independientemente
-del idioma del navegador o del sistema. Tras salir puede mantenerse el último idioma elegido.
+contraseña. Al elegir una opción se aplica automáticamente y se guarda una cookie `idioma`
+durante un año. La elección manual prevalece sobre el idioma anunciado por el navegador.
+Cada navegador o dispositivo conserva su propia selección, también al entrar, salir,
+utilizar «Recordarme» o cambiar de cuenta. Sin JavaScript se ofrece un botón alternativo.
+El cambio sigue usando POST con CSRF; no modifica ninguna cuenta.
+
+La migración `V6__idioma_en_navegador.sql` retira la antigua columna de idioma del usuario.
+La migración V5 ya aplicada se conserva sin cambios. Las cuentas, permisos, contraseñas,
+documentos y archivos se mantienen.
 
 En la subida, cambiar de idioma recarga la pantalla. Si hay archivos pendientes, se pide
-confirmación **antes** de enviar el cambio; cancelar conserva la selección. Continuar pierde
+confirmación **antes** de enviar el cambio; cancelar conserva los archivos y restaura el idioma mostrado en el desplegable. Continuar pierde
 esa selección sin guardarla. Durante la preparación o el guardado se bloquea el cambio.
 Los borradores abandonados se eliminan mediante la caducidad habitual.
 
