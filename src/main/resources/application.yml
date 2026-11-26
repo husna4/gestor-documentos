@@ -1,5 +1,5 @@
 # Configuración de la aplicación.
-# Los valores sensibles salen de variables de entorno: ${VARIABLE:valor-por-defecto}.
+# En desarrollo los secretos salen del entorno. Docker importa archivos con configtree.
 
 spring:
   messages:

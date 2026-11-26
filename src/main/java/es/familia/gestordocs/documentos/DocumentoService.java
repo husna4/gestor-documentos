@@ -422,7 +422,7 @@ public class DocumentoService {
                         .toList(),
                 usuarios.getOrDefault(d.getSubidoPorId(), ""),
                 d.getSubidoEn(),
-                d.getClaveMiniatura() != null))
+                d.getClaveMiniatura()))
                 .toList();
     }
 

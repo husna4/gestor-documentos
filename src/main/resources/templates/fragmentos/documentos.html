@@ -8,9 +8,9 @@
     <div th:unless="${#lists.isEmpty(documentos)}" class="list-group shadow-sm">
         <div th:each="d : ${documentos}" class="list-group-item d-flex gap-3 align-items-center py-2">
             <a th:href="@{/documentos/{id}(id=${d.id})}" class="flex-shrink-0" aria-hidden="true" tabindex="-1">
-                <img th:if="${d.tieneMiniatura}" th:src="@{/documentos/{id}/miniatura(id=${d.id})}"
+                <img th:if="${d.tieneMiniatura()}" th:src="@{/documentos/{id}/miniatura(id=${d.id}, v=${d.versionMiniatura})}"
                      class="miniatura rounded" alt="" loading="lazy">
-                <span th:unless="${d.tieneMiniatura}" class="miniatura rounded icono-fichero">
+                <span th:unless="${d.tieneMiniatura()}" class="miniatura rounded icono-fichero">
                     <i class="bi" th:classappend="${d.icono()}"></i>
                 </span>
             </a>
