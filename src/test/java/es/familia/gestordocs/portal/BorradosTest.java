@@ -96,7 +96,7 @@ class BorradosTest {
 
         assertThatThrownBy(() -> seccionService.crear(new SeccionForm(" facturas ", null)))
                 .isInstanceOf(ReglaNegocioException.class)
-                .hasMessage("Ya existe una sección con ese nombre.");
+                .hasMessage("secciones.duplicada");
     }
 
     @Test

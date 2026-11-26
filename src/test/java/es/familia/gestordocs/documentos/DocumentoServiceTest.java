@@ -17,6 +17,7 @@ import org.springframework.test.context.transaction.TestTransaction;
 import es.familia.gestordocs.Muestras;
 import es.familia.gestordocs.SesionDePrueba;
 import es.familia.gestordocs.TestIntegracion;
+import es.familia.gestordocs.compartido.Mensaje;
 import es.familia.gestordocs.compartido.ReglaNegocioException;
 import es.familia.gestordocs.personas.PersonaForm;
 import es.familia.gestordocs.personas.PersonaService;
@@ -88,9 +89,15 @@ class DocumentoServiceTest {
         assertThat(resultado.subidos()).extracting(DocumentoDto::tipoMime)
                 .containsExactly("application/pdf", "text/plain");
         assertThat(resultado.errores()).hasSize(3);
-        assertThat(resultado.errores().get(0)).startsWith("foto.jpg: tipo de fichero no permitido");
-        assertThat(resultado.errores().get(1)).isEqualTo("vacio.pdf: el fichero está vacío.");
-        assertThat(resultado.errores().get(2)).isEqualTo("enorme.pdf: supera el tamaño máximo de 100 KB.");
+        assertThat(resultado.errores()).extracting(Mensaje::codigo)
+                .containsExactly("documentos.errorFichero", "documentos.errorFichero", "documentos.errorFichero");
+        assertThat(resultado.errores().get(0).argumentos().getFirst()).isEqualTo("foto.jpg");
+        assertThat((Mensaje) resultado.errores().get(0).argumentos().get(1))
+                .extracting(Mensaje::codigo).isEqualTo("documentos.tipo");
+        assertThat(resultado.errores().get(1)).isEqualTo(Mensaje.de("documentos.errorFichero",
+                "vacio.pdf", Mensaje.de("documentos.vacio")));
+        assertThat(resultado.errores().get(2)).isEqualTo(Mensaje.de("documentos.errorFichero",
+                "enorme.pdf", Mensaje.de("documentos.grande", "100 KB")));
     }
 
     @Test

@@ -61,6 +61,8 @@ class EstadoUsuarioFilter extends OncePerRequestFilter {
 
     private static boolean permitidaSinCambiarPassword(HttpServletRequest request) {
         var ruta = request.getRequestURI().substring(request.getContextPath().length());
-        return PERMITIDAS_SIN_CAMBIAR_PASSWORD.stream().anyMatch(ruta::startsWith);
+        return ("/idioma".equals(ruta) && "POST".equals(request.getMethod()))
+                || "/js/interfaz.js".equals(ruta)
+                || PERMITIDAS_SIN_CAMBIAR_PASSWORD.stream().anyMatch(ruta::startsWith);
     }
 }

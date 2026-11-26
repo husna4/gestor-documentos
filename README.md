@@ -1,123 +1,125 @@
-# Gestor de documentos
+# Document Manager
 
-Aplicación web para organizar documentos por personas y secciones, con acceso desde ordenador y móvil.
+**English** | [Español](README.es.md)
 
-- Usuarios con roles de administrador y consulta.
-- Subida múltiple y captura de fotos con recorte y filtros.
-- Búsqueda sin distinguir tildes, visor de imágenes y PDF, y descarga individual o en ZIP.
-- Validación de archivos, límites de tamaño y miniaturas.
+A web application for organizing documents by person and section, accessible from desktop and mobile devices.
 
-Desarrollada con Java 21, Spring Boot, PostgreSQL y Thymeleaf, htmx y Bootstrap. No requiere compilación con Node.js.
+- Administrator and read-only user roles.
+- Multiple file uploads and photo capture with cropping and filters.
+- Accent-insensitive search, image and PDF previews, and individual or ZIP downloads.
+- File validation, size limits, and thumbnails.
 
-## Instalación con Docker
+Built with Java 21, Spring Boot, PostgreSQL, Thymeleaf, htmx, and Bootstrap. No Node.js build is required.
 
-Necesitas Docker con contenedores Linux y Compose v2 con BuildKit. Desde la raíz del repositorio:
+## Install with Docker
+
+You need Docker with Linux containers and Compose v2 with BuildKit. From the repository root:
 
 ```sh
 docker compose up --build -d --wait
 ```
 
-Abre **http://localhost:8090** e inicia sesión como `admin`. Consulta la contraseña inicial con:
+Open [http://localhost:8090](http://localhost:8090) and sign in as `admin`. Retrieve the initial password with:
 
 ```sh
 docker compose exec app cat /run/app-secrets/app.admin.password
 ```
 
-Deberás cambiarla en el primer acceso; el comando seguirá mostrando la contraseña inicial.
+You must change it when you first sign in. The command will continue to show the initial password afterward.
 
-No necesitas crear `.env`: las contraseñas se generan y conservan automáticamente. Para personalizar el puerto, los límites o el usuario inicial, copia [.env.example](.env.example) a `.env` antes del primer arranque. Cambiar `ADMIN_USERNAME` después no modifica el usuario creado.
+You do not need to create `.env`: passwords are generated and persisted automatically. To customize the port, limits, or initial username, copy [.env.example](.env.example) to `.env` before the first startup. Changing `ADMIN_USERNAME` afterward does not modify the existing account.
 
-Docker arranca el gestor, PostgreSQL y DocScanner en una instalación independiente de los datos de desarrollo local.
+Docker starts the document manager, PostgreSQL, and DocScanner in an installation separate from your local development data.
 
-### Comandos habituales
+### Common commands
 
 ```sh
-docker compose ps                  # Consultar el estado
-docker compose logs --tail=100 app # Ver los últimos logs del gestor
-docker compose stop               # Detener
-docker compose start --wait        # Volver a arrancar
-docker compose down               # Eliminar contenedores, conservando los datos
+docker compose ps                  # Check service status
+docker compose logs --tail=100 app # View recent application logs
+docker compose stop               # Stop services
+docker compose start --wait        # Start services again
+docker compose down               # Remove containers while keeping data
 ```
 
-Para actualizar, descarga el código nuevo y repite `docker compose up --build -d --wait`. La construcción también toma la versión actual de la rama `main` de [DocScanner](https://github.com/husna4/doc-scanner).
+To update, get the latest code and run `docker compose up --build -d --wait` again. The build also uses the current version of the [DocScanner](https://github.com/husna4/doc-scanner) `main` branch.
 
-### Datos y copias
+### Data and backups
 
-Los volúmenes `postgres` y `documentos` guardan la base de datos y los archivos; `secretos-postgres` y `secretos-app`, las credenciales. Docker añade el nombre del proyecto como prefijo.
+The `postgres` and `documentos` volumes store the database and uploaded files. The `secretos-postgres` and `secretos-app` volumes store credentials. Docker prefixes volume names with the project name.
 
-Para una copia completa, detén el gestor y respalda la base de datos, los documentos y los secretos. Guarda las copias en un lugar privado fuera del equipo, junto con `.env` si lo utilizas.
+For a complete backup, stop the application and back up the database, documents, and secrets. Keep backups in a private location on another device, together with `.env` if you use it.
 
-**`docker compose down --volumes` elimina todos los datos y secretos.** No lo uses para detener o actualizar la aplicación.
+**`docker compose down --volumes` deletes all data and secrets.** Do not use it to stop or update the application.
 
-## Desarrollo local
+## Local development
 
-Necesitas JDK 21 y PostgreSQL 13 o superior, con `psql` en el PATH. Maven Wrapper descarga Maven y las dependencias.
+You need JDK 21 and PostgreSQL 13 or later, with `psql` on your PATH. Maven Wrapper downloads Maven and its dependencies.
 
-Crea el usuario y las bases de datos:
+Create the database user and databases:
 
 ```powershell
 psql -U postgres -f scripts/crear-bd.sql
 ```
 
-El script solicita la contraseña de `gestordocs` y crea las bases `gestordocs` y `gestordocs_test`. Flyway aplica las migraciones al arrancar.
+The script prompts for the `gestordocs` password and creates the `gestordocs` and `gestordocs_test` databases. Flyway applies migrations at startup.
 
-Configura las variables y arranca en PowerShell:
+Set the environment variables and start the application in PowerShell:
 
 ```powershell
-$env:DB_PASSWORD = 'contraseña-de-la-base-de-datos'
+$env:DB_PASSWORD = 'your-database-password'
 $env:ADMIN_USERNAME = 'admin'
-$env:ADMIN_PASSWORD = 'contraseña-inicial'
+$env:ADMIN_PASSWORD = 'your-initial-password'
 $env:REMEMBER_ME_KEY = [guid]::NewGuid().ToString('N') + [guid]::NewGuid().ToString('N')
 .\mvnw.cmd spring-boot:run
 ```
 
-Abre **http://localhost:8090**. El administrador inicial debe cambiar su contraseña en el primer acceso.
+Open [http://localhost:8090](http://localhost:8090). The initial administrator must change their password when first signing in.
 
-Si ya guardaste las variables como variables de usuario de Windows, puedes arrancar con:
+If you have already saved these variables as Windows user environment variables, you can start the application with:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\arrancar.ps1
 ```
 
-### Configuración
+### Configuration
 
-| Variable | Valor predeterminado o uso |
+| Variable | Default value or purpose |
 |---|---|
-| `DB_PASSWORD` | Obligatoria: contraseña de PostgreSQL |
-| `REMEMBER_ME_KEY` | Obligatoria: clave para la sesión persistente |
-| `ADMIN_USERNAME`, `ADMIN_PASSWORD` | Obligatorias si aún no hay usuarios |
+| `DB_PASSWORD` | Required: PostgreSQL password |
+| `REMEMBER_ME_KEY` | Required: signing key for persistent sign-in |
+| `ADMIN_USERNAME`, `ADMIN_PASSWORD` | Required when no user accounts exist yet |
 | `DB_URL` | `jdbc:postgresql://localhost:5432/gestordocs` |
 | `DB_USER` | `gestordocs` |
 | `APP_PORT` | `8090` |
 | `APP_STORAGE_PATH` | `./datos/ficheros` |
-| `APP_MAX_FILE_SIZE` | `20MB` por archivo |
-| `APP_MAX_REQUEST_SIZE` | `200MB` por petición |
+| `APP_MAX_FILE_SIZE` | `20MB` per file |
+| `APP_MAX_REQUEST_SIZE` | `200MB` per request |
 | `DB_TEST_URL` | `jdbc:postgresql://localhost:5432/gestordocs_test` |
 
-## Uso y escaneo de fotos
+## Usage and photo scanning
 
-El administrador gestiona personas, secciones, usuarios y documentos. Los usuarios de consulta pueden buscar, previsualizar y descargar documentos.
+Administrators manage people, sections, users, and documents. Read-only users can search, preview, and download documents.
 
-**Hacer foto** permite capturar imágenes desde el móvil. Antes de guardar puedes comparar el original con versiones recortadas y filtradas. **Guardar documento** conserva la versión elegida; **Foto original** guarda el archivo sin cambios y sigue disponible si falla el escáner.
+**Take a photo** captures an image from a mobile device. Before saving, you can compare the original with cropped and filtered versions. **Save document** saves the selected version. **Original photo** keeps the file unchanged and remains available if scanning fails.
 
-Con Docker, DocScanner arranca automáticamente. Para desarrollo local, sigue el [README de DocScanner](https://github.com/husna4/doc-scanner). El gestor lo busca en `http://127.0.0.1:8091/api/scan`; puedes cambiarlo con `DOCSCANNER_URL`.
+With Docker, DocScanner starts automatically. For local development, follow the [DocScanner README](https://github.com/husna4/doc-scanner). The document manager connects to `http://127.0.0.1:8091/api/scan` by default; override this with `DOCSCANNER_URL` if needed.
 
-Los borradores de fotos caducan tras 30 minutos de inactividad y se descartan al reiniciar. Las demás opciones de escaneo están en [application.yml](src/main/resources/application.yml).
+Photo drafts expire after 30 minutes of inactivity and are discarded on restart. Other scanning options are documented in [application.yml](src/main/resources/application.yml).
 
-## Copias en desarrollo local
+## Local development backups
 
-Detén el gestor y copia tanto la base de datos como la carpeta de archivos:
+Stop the application and back up both the database and the uploaded files directory:
 
 ```powershell
 pg_dump -U gestordocs -F c -f copia-gestordocs.dump gestordocs
 Compress-Archive -Path datos\ficheros -DestinationPath copia-ficheros.zip
 ```
 
-Si personalizas `APP_STORAGE_PATH`, utiliza esa carpeta al hacer la copia.
+If you customize `APP_STORAGE_PATH`, use that directory when making the backup.
 
-## Tests y empaquetado
+## Tests and packaging
 
-Con PostgreSQL en marcha y `DB_PASSWORD` configurada:
+With PostgreSQL running and `DB_PASSWORD` configured:
 
 ```powershell
 .\mvnw.cmd test
@@ -125,10 +127,14 @@ Con PostgreSQL en marcha y `DB_PASSWORD` configurada:
 java -jar target\gestor-documentos-0.0.1-SNAPSHOT.jar
 ```
 
-Los tests usan `gestordocs_test` y simulan DocScanner. Para probar con el servicio real, configura `DOCSCANNER_LIVE_TEST=true`. La carpeta `muestras/` contiene archivos para pruebas manuales.
+Tests use `gestordocs_test` and simulate DocScanner. To test against the real service, set `DOCSCANNER_LIVE_TEST=true`. The `muestras/` directory contains files for manual testing.
 
-Para comprobar solo los límites entre módulos, sin PostgreSQL:
+To check module boundaries without PostgreSQL:
 
 ```powershell
 .\mvnw.cmd "-Dtest=ModularidadTest" test
 ```
+
+## Interface languages
+
+Available in English and Spanish. The app initially uses your browser's language. You can change it from the dropdown, and your choice is remembered in that browser.

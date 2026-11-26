@@ -5,6 +5,7 @@ import java.util.Locale;
 
 import es.familia.gestordocs.usuarios.Rol;
 import es.familia.gestordocs.usuarios.UsuarioDto;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

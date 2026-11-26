@@ -17,6 +17,8 @@ import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
@@ -30,6 +32,7 @@ import es.familia.gestordocs.personas.PersonaService;
 import es.familia.gestordocs.secciones.SeccionDto;
 import es.familia.gestordocs.secciones.SeccionForm;
 import es.familia.gestordocs.secciones.SeccionService;
+import jakarta.servlet.http.Cookie;
 import es.familia.gestordocs.usuarios.internal.UsuarioAutenticado;
 
 /** Renderiza cada pantalla con datos reales: detecta errores en las plantillas Thymeleaf. */
@@ -38,6 +41,8 @@ class PantallasTest {
 
     @Autowired
     MockMvc mvc;
+
+    boolean en;
 
     @Autowired
     SesionDePrueba sesion;
@@ -77,8 +82,10 @@ class PantallasTest {
         sesion.cerrar();
     }
 
-    @Test
-    void pantallasDeConsulta() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"es", "en"})
+    void pantallasDeConsulta(String codigo) throws Exception {
+        en = "en".equals(codigo);
         pagina("/", "DNI", "María López", "dni-maria");
         pagina("/secciones/" + dni.id(), "Documentos de identidad", "dni-maria", "Descargar todo (ZIP)");
         pagina("/secciones/" + dni.id() + "?persona=" + maria.id(), "dni-maria");
@@ -115,8 +122,10 @@ class PantallasTest {
         pagina("/secciones/" + dni.id(), urlMiniatura);
     }
 
-    @Test
-    void pantallasDeAdministracion() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"es", "en"})
+    void pantallasDeAdministracion(String codigo) throws Exception {
+        en = "en".equals(codigo);
         pagina("/documentos/subir", "Hacer foto", "capture=\"environment\"", "DNI", "María López");
         pagina("/documentos/" + foto.id() + "/editar", "dni-maria");
         pagina("/admin/personas", "María López");
@@ -179,9 +188,25 @@ class PantallasTest {
     }
 
     private void pagina(String url, String... textos) throws Exception {
-        var html = mvc.perform(get(url).with(user(admin)))
+        var html = mvc.perform(get(url).with(user(admin)).cookie(new Cookie("idioma", en ? "en" : "es")))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
-        assertThat(html).as(url).contains(textos);
+        var traducciones = java.util.Map.ofEntries(
+                java.util.Map.entry("Descargar todo (ZIP)", "Download all (ZIP)"),
+                java.util.Map.entry("Sin clasificar", "Unclassified"),
+                java.util.Map.entry("1 resultado", "1 result"),
+                java.util.Map.entry("Escribe para buscar", "Type to search"),
+                java.util.Map.entry("no se puede ver en el navegador", "cannot be viewed in the browser"),
+                java.util.Map.entry("Cambiar contraseña", "Change password"),
+                java.util.Map.entry("Hacer foto", "Take a photo"),
+                java.util.Map.entry("Nueva persona", "New person"),
+                java.util.Map.entry("Tiene 3 documentos", "There are 3 documents"),
+                java.util.Map.entry("quedarán sin persona", "no person assigned"),
+                java.util.Map.entry("Nueva sección", "New section"),
+                java.util.Map.entry("Contraseña temporal", "Temporary password"));
+        var esperados = java.util.Arrays.stream(textos)
+                .map(texto -> en ? traducciones.getOrDefault(texto, texto) : texto).toArray(String[]::new);
+        assertThat(html).as(url).contains(esperados).doesNotContain("??");
+        assertThat(html).contains(en ? "lang=\"en\"" : "lang=\"es\"");
     }
 }

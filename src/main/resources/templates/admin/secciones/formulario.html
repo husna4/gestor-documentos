@@ -1,28 +1,28 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragmentos/layout :: head(${id == null ? 'Nueva sección' : 'Editar sección'})}"></head>
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos/layout :: head(${id == null ? #messages.msg('secciones.nueva') : #messages.msg('secciones.editar')})}"></head>
 <body>
 <nav th:replace="~{fragmentos/layout :: navbar}"></nav>
 <main class="container pb-5">
     <div class="row justify-content-center">
         <div class="col-12 col-md-8 col-lg-6">
-            <h1 class="h3 mb-3" th:text="${id} == null ? 'Nueva sección' : 'Editar sección'">Sección</h1>
+            <h1 class="h3 mb-3" th:text="${id} == null ? #{secciones.nueva} : #{secciones.editar}">Sección</h1>
             <form th:action="${id} == null ? @{/admin/secciones/nueva} : @{/admin/secciones/{id}/editar(id=${id})}"
                   th:object="${form}" method="post" class="card card-body shadow-sm">
                 <div class="mb-3">
-                    <label for="nombre" class="form-label">Nombre</label>
+                    <label for="nombre" class="form-label" th:text="#{comun.nombre}">Nombre</label>
                     <input type="text" th:field="*{nombre}" class="form-control" th:errorclass="is-invalid"
-                           placeholder="Por ejemplo: DNI, Casa, Ayuda alquiler" required autofocus>
+                           th:placeholder="#{secciones.ejemplo}" required autofocus>
                     <div class="invalid-feedback" th:errors="*{nombre}">Error</div>
                 </div>
                 <div class="mb-3">
-                    <label for="descripcion" class="form-label">Descripción <span class="text-body-secondary">(opcional)</span></label>
+                    <label for="descripcion" class="form-label"><th:block th:text="#{comun.descripcion}">Descripción</th:block> <span class="text-body-secondary" th:text="#{comun.opcional}">(opcional)</span></label>
                     <textarea th:field="*{descripcion}" class="form-control" rows="2" th:errorclass="is-invalid"></textarea>
                     <div class="invalid-feedback" th:errors="*{descripcion}">Error</div>
                 </div>
                 <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-primary">Guardar</button>
-                    <a th:href="@{/admin/secciones}" class="btn btn-outline-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-primary" th:text="#{comun.guardar}">Guardar</button>
+                    <a th:href="@{/admin/secciones}" class="btn btn-outline-secondary" th:text="#{comun.cancelar}">Cancelar</a>
                 </div>
             </form>
         </div>

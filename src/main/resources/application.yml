@@ -2,6 +2,9 @@
 # En desarrollo los secretos salen del entorno. Docker importa archivos con configtree.
 
 spring:
+  messages:
+    encoding: UTF-8
+    fallback-to-system-locale: false
   application:
     name: gestor-documentos
   datasource:

@@ -59,11 +59,11 @@ public class UsuarioService {
     public void cambiarPasswordPropia(String actual, String nueva) {
         var usuario = usuarioActualEntidad();
         if (!passwordEncoder.matches(actual, usuario.getPasswordHash())) {
-            throw new ReglaNegocioException("La contraseña actual no es correcta.");
+            throw new ReglaNegocioException("usuarios.password.actualIncorrecta");
         }
         validarNuevaPassword(nueva);
         if (passwordEncoder.matches(nueva, usuario.getPasswordHash())) {
-            throw new ReglaNegocioException("La nueva contraseña debe ser distinta de la actual.");
+            throw new ReglaNegocioException("usuarios.password.distinta");
         }
         usuario.cambiarPassword(passwordEncoder.encode(nueva));
     }
@@ -93,7 +93,7 @@ public class UsuarioService {
     public UsuarioDto crear(NuevoUsuarioForm datos) {
         var username = Usuario.normalizarUsername(datos.username());
         if (usuarios.existsByUsername(username)) {
-            throw new ReglaNegocioException("Ya existe el usuario «" + username + "».");
+            throw new ReglaNegocioException("usuarios.duplicado", username);
         }
         validarNuevaPassword(datos.password());
         validarPersona(datos.personaId());
@@ -108,7 +108,7 @@ public class UsuarioService {
         var usuario = buscarEntidad(id);
         var dejaDeSerAdminActivo = usuario.esAdminActivo() && (datos.rol() != Rol.ADMIN || !datos.activo());
         if (dejaDeSerAdminActivo && esUsuarioActual(id)) {
-            throw new ReglaNegocioException("No puedes quitarte el rol de administrador ni desactivarte a ti mismo.");
+            throw new ReglaNegocioException("usuarios.protegerAdminPropio");
         }
         if (dejaDeSerAdminActivo) {
             comprobarQueQuedaOtroAdmin();
@@ -125,7 +125,7 @@ public class UsuarioService {
     @Transactional
     public void resetearPassword(Long id, String temporal) {
         if (esUsuarioActual(id)) {
-            throw new ReglaNegocioException("Para cambiar tu propia contraseña usa «Cambiar contraseña».");
+            throw new ReglaNegocioException("usuarios.password.usarCuenta");
         }
         validarNuevaPassword(temporal);
         buscarEntidad(id).resetearPassword(passwordEncoder.encode(temporal));
@@ -136,7 +136,7 @@ public class UsuarioService {
     public void eliminar(Long id) {
         var usuario = buscarEntidad(id);
         if (esUsuarioActual(id)) {
-            throw new ReglaNegocioException("No puedes borrar tu propio usuario.");
+            throw new ReglaNegocioException("usuarios.borrarPropio");
         }
         if (usuario.esAdminActivo()) {
             comprobarQueQuedaOtroAdmin();
@@ -153,7 +153,7 @@ public class UsuarioService {
     }
 
     private Usuario buscarEntidad(Long id) {
-        return usuarios.findById(id).orElseThrow(() -> new NoEncontradoException("No existe el usuario " + id));
+        return usuarios.findById(id).orElseThrow(() -> new NoEncontradoException("usuarios.noExiste", id));
     }
 
     private boolean esUsuarioActual(Long id) {
@@ -162,20 +162,20 @@ public class UsuarioService {
 
     private void comprobarQueQuedaOtroAdmin() {
         if (usuarios.countByRolAndActivoTrue(Rol.ADMIN) <= 1) {
-            throw new ReglaNegocioException("Tiene que quedar al menos un administrador activo.");
+            throw new ReglaNegocioException("usuarios.ultimoAdmin");
         }
     }
 
     private void validarPersona(Long personaId) {
         if (personaId != null && !personaService.existe(personaId)) {
-            throw new ReglaNegocioException("La persona elegida no existe.");
+            throw new ReglaNegocioException("personas.elegidaNoExiste");
         }
     }
 
     private static void validarNuevaPassword(String nueva) {
         if (nueva == null || nueva.length() < LONGITUD_MINIMA_PASSWORD) {
             throw new ReglaNegocioException(
-                    "La contraseña debe tener al menos " + LONGITUD_MINIMA_PASSWORD + " caracteres.");
+                    "usuarios.password.longitud", LONGITUD_MINIMA_PASSWORD);
         }
     }
 }

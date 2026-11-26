@@ -1,13 +1,8 @@
 package es.familia.gestordocs.compartido;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ResponseStatus;
+@org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.NOT_FOUND)
+public class NoEncontradoException extends ErrorAplicacion {
+    public NoEncontradoException(String codigo, Object... argumentos) { super(codigo, argumentos); }
 
-/** Se pidió algo (un documento, una persona...) que no existe. Se traduce en un 404. */
-@ResponseStatus(HttpStatus.NOT_FOUND)
-public class NoEncontradoException extends RuntimeException {
-
-    public NoEncontradoException(String mensaje) {
-        super(mensaje);
-    }
+    public NoEncontradoException(Mensaje mensaje) { super(mensaje); }
 }

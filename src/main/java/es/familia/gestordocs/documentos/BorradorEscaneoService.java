@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -16,6 +17,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+
 import es.familia.gestordocs.compartido.NoEncontradoException;
 import es.familia.gestordocs.compartido.ReglaNegocioException;
 import es.familia.gestordocs.documentos.internal.AlmacenBorradores;
@@ -60,22 +62,22 @@ public class BorradorEscaneoService {
         var propietario = propietarioActual();
         if (borradores.size() >= propiedades.maximoTotal() || borradores.values().stream()
                 .filter(b -> b.propietario.equals(propietario)).count() >= propiedades.maximoPorUsuario()) {
-            throw new ReglaNegocioException("Hay demasiadas fotos pendientes. Guarda o elimina alguna antes de continuar.");
+            throw new ReglaNegocioException("escaneo.demasiadas");
         }
         var limite = documentos.tamanoMaximo().toBytes();
         if (fichero.tamano() <= 0 || fichero.tamano() > limite) {
-            throw new ReglaNegocioException("La foto está vacía o supera el tamaño permitido.");
+            throw new ReglaNegocioException("escaneo.fotoTamano");
         }
         var id = UUID.randomUUID();
         try (var input = fichero.contenido().getInputStream()) {
             var original = input.readNBytes((int) Math.min(limite, Integer.MAX_VALUE - 1L) + 1);
             if (original.length == 0 || original.length > limite) {
-                throw new ReglaNegocioException("La foto está vacía o supera el tamaño permitido.");
+                throw new ReglaNegocioException("escaneo.fotoTamano");
             }
             var nombre = NombresFichero.limpiar(fichero.nombreOriginal());
             var tipo = detector.detectar(new java.io.ByteArrayInputStream(original), nombre);
             if (!TiposFichero.esEscaneable(tipo)) {
-                throw new ReglaNegocioException("Este fichero no es una foto compatible con el escáner.");
+                throw new ReglaNegocioException("escaneo.incompatible");
             }
             comprobarEspacio(original.length);
             almacen.escribir(id, "fuente", original);
@@ -86,7 +88,7 @@ public class BorradorEscaneoService {
         } catch (IOException e) {
             borradores.remove(id);
             try { almacen.borrar(id); } catch (IOException ignored) { log.warn("Limpieza temporal pendiente"); }
-            throw errorDisco();
+            throw errorDisco(e);
         }
     }
 
@@ -109,13 +111,13 @@ public class BorradorEscaneoService {
                 }
                 var contenido = resultado.contenido();
                 if (contenido.length == 0 || contenido.length > documentos.tamanoMaximo().toBytes()) {
-                    throw new ReglaNegocioException("La imagen procesada supera el tamaño permitido o está vacía.");
+                    throw new ReglaNegocioException("escaneo.procesadaTamano");
                 }
                 comprobarEspacio(contenido.length);
                 almacen.escribir(id, variante, contenido);
                 b.variantes.put(filtro, sinBordes);
                 tocar(b);
-            } catch (IOException e) { throw errorDisco(); }
+            } catch (IOException e) { throw errorDisco(e); }
         }
         return new VistaBorrador(variante, b.variantes.get(filtro));
     }
@@ -128,7 +130,7 @@ public class BorradorEscaneoService {
         tocar(b);
         try {
             return new ImagenBorrador(almacen.leer(id, variante), variante.equals("fuente") ? b.tipo : "image/jpeg");
-        } catch (IOException e) { throw errorDisco(); }
+        } catch (IOException e) { throw errorDisco(e); }
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -155,7 +157,7 @@ public class BorradorEscaneoService {
             b.reserva = token;
             return new ReservaBorrador(b.id, token,
                     new FicheroSubido(nombre, bytes.length, new ByteArrayResource(bytes)));
-        } catch (IOException e) { throw errorDisco(); }
+        } catch (IOException e) { throw errorDisco(e); }
     }
 
     /** Solo para la sincronización transaccional del módulo; no se expone mediante HTTP. */
@@ -188,18 +190,18 @@ public class BorradorEscaneoService {
 
     private void exigirVariante(Borrador b, String variante) {
         if (!variante.equals("fuente") && !b.variantes.containsKey(FiltroEscaneo.valueOf(variante))) {
-            throw new ReglaNegocioException("Previsualiza ese filtro antes de guardar.");
+            throw new ReglaNegocioException("escaneo.previsualizar");
         }
     }
 
     private static void validarVariante(String variante) {
         if (variante == null || !Set.of("fuente", "original", "grayscale", "bw", "enhanced").contains(variante)) {
-            throw new ReglaNegocioException("El filtro solicitado no es válido.");
+            throw new ReglaNegocioException("escaneo.filtroInvalido");
         }
     }
 
     private static void comprobarDisponible(Borrador b) {
-        if (b.reserva != null) { throw new ReglaNegocioException("La foto se está guardando. Espera a que termine."); }
+        if (b.reserva != null) { throw new ReglaNegocioException("escaneo.guardando"); }
     }
 
     private Long propietarioActual() {
@@ -208,13 +210,13 @@ public class BorradorEscaneoService {
 
     private void comprobarEspacio(long nuevosBytes) throws IOException {
         if (nuevosBytes > propiedades.espacioMaximo().toBytes() - almacen.espacioUtilizado()) {
-            throw new ReglaNegocioException("No queda espacio temporal. Guarda o elimina fotos pendientes.");
+            throw new ReglaNegocioException("escaneo.sinEspacio");
         }
     }
 
     private void tocar(Borrador b) {
         b.actividad = reloj.instant();
-        try { almacen.tocar(b.id, b.actividad); } catch (IOException e) { throw errorDisco(); }
+        try { almacen.tocar(b.id, b.actividad); } catch (IOException e) { throw errorDisco(e); }
     }
 
     private void eliminar(Borrador b) {
@@ -224,10 +226,11 @@ public class BorradorEscaneoService {
     }
 
     private static NoEncontradoException noExiste() {
-        return new NoEncontradoException("La foto pendiente no existe o ha caducado. Vuelve a seleccionarla.");
+        return new NoEncontradoException("escaneo.caducado");
     }
-    private static ReglaNegocioException errorDisco() {
-        return new ReglaNegocioException("No se pudo acceder al almacenamiento temporal. Vuelve a intentarlo.");
+    private static ReglaNegocioException errorDisco(IOException causa) {
+        log.error("Fallo del almacenamiento temporal", causa);
+        return new ReglaNegocioException("escaneo.errorDisco", causa);
     }
 
     private static class Borrador {

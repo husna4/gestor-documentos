@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotNull;
 
 /** Lo que el admin puede cambiar de un usuario existente (el username no cambia). */
 public record EdicionUsuarioForm(
-        @NotNull(message = "Elige un rol") Rol rol,
+        @NotNull(message = "{validacion.rol}") Rol rol,
         boolean activo,
         Long personaId) {
 

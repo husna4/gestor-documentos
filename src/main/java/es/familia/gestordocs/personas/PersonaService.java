@@ -73,6 +73,6 @@ public class PersonaService {
     }
 
     private Persona buscarEntidad(Long id) {
-        return personas.findById(id).orElseThrow(() -> new NoEncontradoException("No existe la persona " + id));
+        return personas.findById(id).orElseThrow(() -> new NoEncontradoException("personas.noExiste", id));
     }
 }

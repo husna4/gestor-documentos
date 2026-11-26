@@ -1,30 +1,33 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragmentos/layout :: head('Error')}"></head>
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos/layout :: head(#{comun.error})}"></head>
 <body>
 <nav th:replace="~{fragmentos/layout :: navbar}"></nav>
 <main class="container text-center py-5">
     <th:block th:switch="${status}">
+        <th:block th:case="400">
+            <h1 class="h3" th:text="#{error.revisar}">Revisa los datos</h1>
+            <p class="text-body-secondary" th:text="#{error.datosInvalidos}">Revisa los datos de la solicitud.</p>
+        </th:block>
         <th:block th:case="403">
-            <h1 class="h3"><i class="bi bi-shield-lock"></i> No tienes permiso</h1>
-            <p class="text-body-secondary">Esta acción solo está disponible para administradores.</p>
+            <h1 class="h3"><i class="bi bi-shield-lock"></i> <th:block th:text="#{error.permiso}">No tienes permiso</th:block></h1>
+            <p class="text-body-secondary" th:text="#{error.admin}">Esta acción solo está disponible para administradores.</p>
         </th:block>
         <th:block th:case="404">
-            <h1 class="h3"><i class="bi bi-question-circle"></i> No encontrado</h1>
-            <p class="text-body-secondary">Lo que buscas no existe o ha sido borrado.</p>
+            <h1 class="h3"><i class="bi bi-question-circle"></i> <th:block th:text="#{error.noEncontrado}">No encontrado</th:block></h1>
+            <p class="text-body-secondary" th:text="#{error.ausente}">Lo que buscas no existe o ha sido borrado.</p>
         </th:block>
         <th:block th:case="413">
-            <h1 class="h3"><i class="bi bi-file-earmark-x"></i> Fichero demasiado grande</h1>
-            <p class="text-body-secondary">Algún fichero supera el tamaño máximo permitido. Redúcelo
-                (por ejemplo, haz la foto con menos resolución) o súbelo por separado.</p>
-            <p><a th:href="@{/documentos/subir}" class="btn btn-outline-primary">Volver a subir</a></p>
+            <h1 class="h3"><i class="bi bi-file-earmark-x"></i> <th:block th:text="#{error.grande}">Fichero demasiado grande</th:block></h1>
+            <p class="text-body-secondary" th:text="#{error.grandeAyuda}">Algún fichero supera el tamaño máximo permitido. Redúcelo (por ejemplo, haz la foto con menos resolución) o súbelo por separado.</p>
+            <p><a th:href="@{/documentos/subir}" class="btn btn-outline-primary" th:text="#{error.volverSubir}">Volver a subir</a></p>
         </th:block>
         <th:block th:case="*">
-            <h1 class="h3"><i class="bi bi-exclamation-triangle"></i> Algo ha ido mal</h1>
-            <p class="text-body-secondary">Ha ocurrido un error inesperado. Prueba de nuevo en un momento.</p>
+            <h1 class="h3"><i class="bi bi-exclamation-triangle"></i> <th:block th:text="#{error.inesperado}">Algo ha ido mal</th:block></h1>
+            <p class="text-body-secondary" th:text="#{error.reintentar}">Ha ocurrido un error inesperado. Prueba de nuevo en un momento.</p>
         </th:block>
     </th:block>
-    <a th:href="@{/}" class="btn btn-primary">Volver al inicio</a>
+    <a th:href="@{/}" class="btn btn-primary" th:text="#{comun.volverInicio}">Volver al inicio</a>
 </main>
 <th:block th:replace="~{fragmentos/layout :: scripts}"></th:block>
 </body>

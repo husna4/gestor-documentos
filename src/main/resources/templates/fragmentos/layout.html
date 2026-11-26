@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org"
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <!--
   Fragmentos comunes a todas las páginas. Uso en cada página:
@@ -12,40 +12,55 @@
 <head th:fragment="head(titulo)">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title th:text="${titulo} + ' · Documentos de casa'">Documentos de casa</title>
+    <title th:text="${@mensajes.texto(titulo)} + ' · ' + #{comun.app}">Documentos de casa</title>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
     <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
     <link rel="stylesheet" th:href="@{/css/app.css}">
+    <script th:src="@{/js/interfaz.js}" defer></script>
 </head>
 
 <body>
+<form th:fragment="idioma" th:action="@{/idioma}" method="post"
+      class="d-flex flex-wrap align-items-center gap-2 my-2" data-selector-idioma>
+    <label for="idioma-interfaz" class="small text-body" th:text="#{comun.idioma}">Idioma</label>
+    <select id="idioma-interfaz" name="idioma" class="form-select form-select-sm w-auto">
+        <option value="es" lang="es" th:selected="${#locale.language == 'es'}">Español</option>
+        <option value="en" lang="en" th:selected="${#locale.language == 'en'}">English</option>
+    </select>
+    <input type="hidden" name="volver" th:value="${volverIdioma}">
+    <noscript>
+        <button class="btn btn-sm btn-secondary" type="submit" th:text="#{comun.cambiarIdioma}">Cambiar idioma</button>
+    </noscript>
+</form>
+
 
 <nav th:fragment="navbar" class="navbar navbar-expand-lg bg-primary mb-4" data-bs-theme="dark">
     <div class="container">
         <a class="navbar-brand fw-semibold" th:href="@{/}">
-            <i class="bi bi-folder2-open"></i> Documentos de casa
+            <i class="bi bi-folder2-open"></i> <th:block th:text="#{comun.app}">Documentos de casa</th:block>
         </a>
+        <th:block th:replace="~{fragmentos/layout :: idioma}"></th:block>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu"
-                aria-controls="menu" aria-expanded="false" aria-label="Abrir menú">
+                aria-controls="menu" aria-expanded="false" th:aria-label="#{comun.menu}">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="menu" sec:authorize="isAuthenticated()">
             <form class="d-flex my-2 my-lg-0 ms-lg-3 flex-grow-1 buscador-navbar" role="search"
                   th:action="@{/buscar}" method="get">
-                <input class="form-control" type="search" name="q" placeholder="Buscar documentos…"
-                       aria-label="Buscar documentos">
+                <input class="form-control" type="search" name="q" th:placeholder="#{busqueda.placeholder}"
+                       th:aria-label="#{busqueda.documentos}">
             </form>
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item" sec:authorize="hasRole('ADMIN')">
-                    <a class="nav-link" th:href="@{/documentos/subir}"><i class="bi bi-cloud-upload"></i> Subir</a>
+                    <a class="nav-link" th:href="@{/documentos/subir}"><i class="bi bi-cloud-upload"></i> <th:block th:text="#{documentos.subir}">Subir</th:block></a>
                 </li>
                 <li class="nav-item dropdown" sec:authorize="hasRole('ADMIN')">
                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
-                       aria-expanded="false"><i class="bi bi-gear"></i> Administrar</a>
+                       aria-expanded="false"><i class="bi bi-gear"></i> <th:block th:text="#{comun.administrar}">Administrar</th:block></a>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" th:href="@{/admin/personas}"><i class="bi bi-people"></i> Personas</a></li>
-                        <li><a class="dropdown-item" th:href="@{/admin/secciones}"><i class="bi bi-collection"></i> Secciones</a></li>
-                        <li><a class="dropdown-item" th:href="@{/admin/usuarios}"><i class="bi bi-person-badge"></i> Usuarios</a></li>
+                        <li><a class="dropdown-item" th:href="@{/admin/personas}"><i class="bi bi-people"></i> <th:block th:text="#{personas.titulo}">Personas</th:block></a></li>
+                        <li><a class="dropdown-item" th:href="@{/admin/secciones}"><i class="bi bi-collection"></i> <th:block th:text="#{secciones.titulo}">Secciones</th:block></a></li>
+                        <li><a class="dropdown-item" th:href="@{/admin/usuarios}"><i class="bi bi-person-badge"></i> <th:block th:text="#{usuarios.titulo}">Usuarios</th:block></a></li>
                     </ul>
                 </li>
                 <li class="nav-item dropdown">
@@ -55,13 +70,13 @@
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><a class="dropdown-item" th:href="@{/cuenta/password}">
-                            <i class="bi bi-key"></i> Cambiar contraseña</a></li>
+                            <i class="bi bi-key"></i> <th:block th:text="#{cuenta.cambiar}">Cambiar contraseña</th:block></a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <!-- El logout es un POST con token CSRF: así otra web no puede cerrarte la sesión -->
                             <form th:action="@{/logout}" method="post">
                                 <button type="submit" class="dropdown-item">
-                                    <i class="bi bi-box-arrow-right"></i> Salir
+                                    <i class="bi bi-box-arrow-right"></i> <th:block th:text="#{comun.salir}">Salir</th:block>
                                 </button>
                             </form>
                         </li>
@@ -74,12 +89,12 @@
 
 <th:block th:fragment="mensajes">
     <div th:if="${mensaje}" class="alert alert-success alert-dismissible fade show" role="alert">
-        <span th:text="${mensaje}">Mensaje</span>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        <span th:text="${@mensajes.texto(mensaje)}">Mensaje</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" th:aria-label="#{comun.cerrar}"></button>
     </div>
     <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
-        <span th:text="${error}">Error</span>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        <span th:text="${@mensajes.texto(error)}">Error</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" th:aria-label="#{comun.cerrar}"></button>
     </div>
 </th:block>
 

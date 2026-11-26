@@ -7,9 +7,9 @@ import jakarta.validation.constraints.Size;
 
 /** Lo que el admin puede cambiar de un documento ya subido. */
 public record EdicionDocumentoForm(
-        @NotBlank(message = "El nombre es obligatorio")
-        @Size(max = 255, message = "Máximo {max} caracteres") String nombreVisible,
-        @Size(max = 2000, message = "Máximo {max} caracteres") String descripcion,
+        @NotBlank(message = "{validacion.nombre}")
+        @Size(max = 255, message = "{validacion.maximo}") String nombreVisible,
+        @Size(max = 2000, message = "{validacion.maximo}") String descripcion,
         List<Long> seccionIds,
         Long personaId) {
 

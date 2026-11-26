@@ -5,8 +5,8 @@ import java.io.IOException;
 import java.net.ProxySelector;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.net.http.HttpTimeoutException;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
@@ -14,7 +14,6 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
 import javax.imageio.ImageIO;
 import javax.imageio.stream.MemoryCacheImageInputStream;
 
@@ -25,6 +24,7 @@ import es.familia.gestordocs.escaneo.EscaneoException;
 import es.familia.gestordocs.escaneo.EscaneoService;
 import es.familia.gestordocs.escaneo.FiltroEscaneo;
 import es.familia.gestordocs.escaneo.ResultadoEscaneo;
+
 import jakarta.annotation.PreDestroy;
 
 @Service
@@ -33,7 +33,6 @@ public class DocScannerClient implements EscaneoService {
     private static final Map<String, String> EXTENSIONES = Map.of(
             "image/jpeg", "jpg", "image/png", "png", "image/webp", "webp",
             "image/heic", "heic", "image/heif", "heif");
-    private static final String RECUPERACION = " Reintenta o desmarca «Escanear fotos» para guardar el original.";
     private final DocScannerProperties propiedades;
     private final HttpClient cliente;
 
@@ -58,7 +57,7 @@ public class DocScannerClient implements EscaneoService {
         java.util.Objects.requireNonNull(filtro, "filtro");
         var extension = EXTENSIONES.get(tipoMime);
         if (extension == null) {
-            throw new EscaneoException("El formato de esta imagen no admite escaneo automático.");
+            throw new EscaneoException("escaneo.formato");
         }
         var boundary = "DocScanner-" + UUID.randomUUID();
         // Nombre fijo: el servicio de imagen no necesita nombres ni rutas personales.
@@ -84,47 +83,46 @@ public class DocScannerClient implements EscaneoService {
             return validar(respuesta);
         } catch (TimeoutException e) {
             intercambio.cancel(true);
-            throw new EscaneoException("El escáner ha tardado demasiado." + RECUPERACION);
+            throw new EscaneoException("escaneo.tiempo", e);
         } catch (InterruptedException e) {
             intercambio.cancel(true);
             Thread.currentThread().interrupt();
-            throw new EscaneoException("Se ha interrumpido el escaneo. Vuelve a intentarlo.");
+            throw new EscaneoException("escaneo.interrumpido", e);
         } catch (ExecutionException e) {
             var causa = e.getCause();
             while (causa.getCause() != null) {
                 causa = causa.getCause();
             }
             if (causa instanceof RespuestaLimitada.RespuestaDemasiadoGrande) {
-                throw new EscaneoException("La imagen procesada supera el tamaño máximo de respuesta.");
+                throw new EscaneoException("escaneo.respuestaGrande", e);
             }
             if (causa instanceof HttpTimeoutException) {
-                throw new EscaneoException("El escáner ha tardado demasiado." + RECUPERACION);
+                throw new EscaneoException("escaneo.tiempo", e);
             }
-            throw new EscaneoException("No se ha podido contactar con el escáner. Comprueba que está iniciado."
-                    + RECUPERACION);
+            throw new EscaneoException("escaneo.conexion", e);
         }
     }
 
     private ResultadoEscaneo validar(HttpResponse<byte[]> respuesta) {
         if (respuesta.statusCode() != 200) {
             var mensaje = switch (respuesta.statusCode()) {
-                case 413 -> "El escáner ha rechazado la foto por su tamaño o sus dimensiones.";
-                case 415, 422 -> "El escáner no ha podido procesar esta foto.";
-                case 503 -> "El escáner está ocupado.";
-                default -> "El servicio de escaneo no está disponible.";
+                case 413 -> "escaneo.rechazoTamano";
+                case 415, 422 -> "escaneo.noProcesable";
+                case 503 -> "escaneo.ocupado";
+                default -> "escaneo.noDisponible";
             };
-            throw new EscaneoException(mensaje + RECUPERACION);
+            throw new EscaneoException(mensaje);
         }
         var tipo = respuesta.headers().firstValue("Content-Type").orElse("").split(";")[0].trim();
         var deteccion = respuesta.headers().firstValue("X-Scan-Detection").orElse("");
         if (!"image/jpeg".equalsIgnoreCase(tipo)
                 || !("detected".equals(deteccion) || "not_detected".equals(deteccion) || "disabled".equals(deteccion))) {
-            throw new EscaneoException("El escáner ha devuelto una respuesta no válida." + RECUPERACION);
+            throw new EscaneoException("escaneo.respuestaInvalida");
         }
         var contenido = respuesta.body();
         if (contenido.length < 4 || contenido[contenido.length - 2] != (byte) 0xff
                 || contenido[contenido.length - 1] != (byte) 0xd9) {
-            throw new EscaneoException("El escáner ha devuelto una imagen no válida o incompleta." + RECUPERACION);
+            throw new EscaneoException("escaneo.imagenIncompleta");
         }
         // Acotar las dimensiones antes de decodificar; no crear cachés en disco.
         try (var input = new MemoryCacheImageInputStream(new ByteArrayInputStream(contenido))) {
@@ -135,7 +133,7 @@ public class DocScannerClient implements EscaneoService {
             var reader = readers.next();
             try {
                 reader.addIIOReadWarningListener((source, warning) -> {
-                    throw new EscaneoException("El escáner ha devuelto una imagen no válida o incompleta." + RECUPERACION);
+                    throw new EscaneoException("escaneo.imagenIncompleta");
                 });
                 reader.setInput(input, true, true);
                 var ancho = reader.getWidth(0);
@@ -151,7 +149,7 @@ public class DocScannerClient implements EscaneoService {
                 reader.dispose();
             }
         } catch (IOException e) {
-            throw new EscaneoException("El escáner ha devuelto una imagen no válida." + RECUPERACION);
+            throw new EscaneoException("escaneo.imagenInvalida", e);
         }
         return new ResultadoEscaneo(contenido, "detected".equals(deteccion));
     }
